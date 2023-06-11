@@ -1,0 +1,33 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@redhorse-tech"
+      - name: Setup git user
+        run: |
+          git config --global user.name namanicebed
+          git config --global user.email naman.icebed@gmail.com
+      - name: Build and prepare release
+        run: npm run init && npm run release-alpha
+      - name: Release package
+        run: cd stallion-package && npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push changes
+        run: git push

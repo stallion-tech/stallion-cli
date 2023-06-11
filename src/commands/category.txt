@@ -1,0 +1,1 @@
+Stallion enables you to test and deploy react native code on the fly
