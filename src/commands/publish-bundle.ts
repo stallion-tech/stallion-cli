@@ -22,7 +22,9 @@ import { out } from '../interaction-output';
 import { createZip } from '../utils/archiver';
 import { Endpoints } from '../apis/endpoints';
 import { createReadStream } from 'fs';
+import { readFile } from 'fs/promises';
 import * as rimraf from 'rimraf';
+import { stallionConfigFile } from '../constants';
 
 @help('Publish bundle')
 export default class PublishBundle extends Command {
@@ -105,6 +107,19 @@ export default class PublishBundle extends Command {
             }
         }
 
+        //check for stallion.config.json file
+        try {
+            const data = await readFile(stallionConfigFile, { encoding: 'utf-8' });
+            const stallionConfig = JSON.parse(data);
+            if (!stallionConfig.isEnabled) {
+                rimraf.sync(contentTempRootPath);
+                return failure(ErrorCodes.Exception, 'stallion is disabled');
+            }
+        } catch (e) {
+            rimraf.sync(contentTempRootPath);
+            return failure(ErrorCodes.Exception, 'stallion.config.json file not found');
+        }
+
         try {
             createEmptyTmpReleaseFolder(this.contentRootPath);
             removeReactTmpDir();
@@ -149,6 +164,9 @@ export default class PublishBundle extends Command {
             form.append('releaseNote', this.releaseNote);
             await client.post(Endpoints.UPLOAD_BUNDLE, form);
         } catch (e) {
+            if (e.toString().includes('AxiosError:')) {
+                throw e?.response?.data?.errors?.data?.[0]?.message ?? 'something went wrong';
+            }
             throw new Error(e.toString());
         }
     }
