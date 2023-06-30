@@ -6,7 +6,6 @@ import { out } from '../interaction-output';
 import * as chalk from 'chalk';
 import * as childProcess from 'child_process';
 import { coerce, compare } from 'semver';
-const g2js = require('gradle-to-js/lib/parser');
 
 export function getReactNativeVersion(): string {
     let packageJsonFilename;
@@ -222,39 +221,4 @@ async function getHermesCommand(): Promise<string> {
         return hermesEngine;
     }
     return path.join('node_modules', 'hermesvm', getHermesOSBin(), 'hermes');
-}
-
-export function getAndroidHermesEnabled(): Promise<boolean> {
-    return parseBuildGradleFile().then((buildGradle: any) => {
-        return Array.from(buildGradle['project.ext.react'] || []).some((line: string) => /^enableHermes\s{0,}:\s{0,}true/.test(line));
-    });
-}
-
-export function getiOSHermesEnabled(): Promise<boolean> {
-    let podPath = path.join('ios', 'Podfile');
-    if (fileDoesNotExistOrIsDirectory(podPath)) {
-        throw new Error(`Unable to find Podfile file "${podPath}".`);
-    }
-
-    try {
-        const podFileContents = fs.readFileSync(podPath).toString();
-        return Promise.resolve(/([^#\n]*:?hermes_enabled(\s+|\n+)?(=>|:)(\s+|\n+)?true)/.test(podFileContents));
-    } catch (error) {
-        throw error;
-    }
-}
-
-function parseBuildGradleFile() {
-    let buildGradlePath: string = path.join('android', 'app');
-    if (fs.lstatSync(buildGradlePath).isDirectory()) {
-        buildGradlePath = path.join(buildGradlePath, 'build.gradle');
-    }
-
-    if (fileDoesNotExistOrIsDirectory(buildGradlePath)) {
-        throw new Error(`Unable to find gradle file "${buildGradlePath}".`);
-    }
-
-    return g2js.parseFile(buildGradlePath).catch(() => {
-        throw new Error(`Unable to parse the "${buildGradlePath}" file. Please ensure it is a well-formed Gradle file.`);
-    });
 }

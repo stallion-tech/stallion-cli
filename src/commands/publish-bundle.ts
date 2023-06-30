@@ -6,8 +6,6 @@ import { CommandResult, ErrorCodes, failure, success } from '../command-line/com
 import {
     createEmptyTmpReleaseFolder,
     fileDoesNotExistOrIsDirectory,
-    getAndroidHermesEnabled,
-    getiOSHermesEnabled,
     getReactNativeVersion,
     isValidPlatform,
     removeReactTmpDir,
@@ -50,7 +48,7 @@ export default class PublishBundle extends Command {
     @hasArg
     public platform: string;
 
-    @help('Enable hermes and bypass automatic checks')
+    @help('Enable hermes')
     @longName('hermes-enabled')
     public useHermes: boolean;
 
@@ -125,10 +123,7 @@ export default class PublishBundle extends Command {
             removeReactTmpDir();
             await runReactNativeBundleCommand(this.bundleName, this.entryFile, this.contentRootPath, this.platform, this.devMode);
 
-            const isHermesEnabled =
-                this.useHermes ||
-                (this.platform === 'android' && (await getAndroidHermesEnabled())) ||
-                (this.platform === 'ios' && (await getiOSHermesEnabled()));
+            const isHermesEnabled = this.useHermes;
             if (isHermesEnabled) {
                 await runHermesEmitBinaryCommand(this.bundleName, this.contentRootPath);
             }
