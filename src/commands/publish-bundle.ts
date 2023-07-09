@@ -20,9 +20,7 @@ import { out } from '../interaction-output';
 import { createZip } from '../utils/archiver';
 import { Endpoints } from '../apis/endpoints';
 import { createReadStream } from 'fs';
-import { readFile } from 'fs/promises';
 import * as rimraf from 'rimraf';
-import { stallionConfigFile } from '../constants';
 
 @help('Publish bundle')
 export default class PublishBundle extends Command {
@@ -103,19 +101,6 @@ export default class PublishBundle extends Command {
             if (fileDoesNotExistOrIsDirectory(this.entryFile)) {
                 return failure(ErrorCodes.NotFound, `Entry file "${this.entryFile}" does not exist.`);
             }
-        }
-
-        //check for stallion.config.json file
-        try {
-            const data = await readFile(stallionConfigFile, { encoding: 'utf-8' });
-            const stallionConfig = JSON.parse(data);
-            if (!stallionConfig.isEnabled) {
-                rimraf.sync(contentTempRootPath);
-                return failure(ErrorCodes.Exception, 'stallion is disabled');
-            }
-        } catch (e) {
-            rimraf.sync(contentTempRootPath);
-            return failure(ErrorCodes.Exception, 'stallion.config.json file not found');
         }
 
         try {
