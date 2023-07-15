@@ -53,7 +53,7 @@ export default class Command {
             try {
                 await this.clientFactory.get(Endpoints.PROFILE);
             } catch (e) {
-                return Promise.resolve(failure(ErrorCodes.Exception, 'something went wrong'));
+                return Promise.resolve(failure(ErrorCodes.Exception, 'cannot fetch profile!!'));
             }
 
             return await this.runCommand(this.clientFactory);
