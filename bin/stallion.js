@@ -46,3 +46,15 @@ if (ensureNodeVersion()) {
 } else {
     process.exit(1);
 }
+
+['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((signal) =>
+    process.on(signal, () => {
+        process.exit(1);
+    })
+);
+
+process.on('exit', () => {
+    fs.readdirSync('./')
+        .filter((f) => f.includes('stallion-temp'))
+        .map((f) => rimraf.sync(f));
+});
