@@ -51,7 +51,9 @@ export function checkForStallionEnabled() {
         throw 'Stallion SDK is not installed. Please run npm install react-native-stallion';
     }
     const result = output.stdout.trim();
-    if (!result) throw 'Stallion not enabled in stallion.config.js';
+    if (result === 'false') {
+        throw 'Stallion not enabled in stallion.config.js';
+    }
     return true;
 }
 
