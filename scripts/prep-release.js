@@ -2,12 +2,14 @@ const fs = require('fs/promises');
 const path = require('path');
 const rimraf = require('rimraf');
 const prettier = require('prettier');
+const chalk = require('chalk');
 
 const rootPath = path.resolve(__dirname, '../', 'stallion-package');
 const distPath = path.resolve(__dirname, '../', 'dist');
 const binPath = path.resolve(__dirname, '../', 'bin');
 const pkgJsonPath = path.resolve(__dirname, '../', 'package.json');
-const chalk = require('chalk');
+const readmePath = path.resolve(__dirname, '../', 'README.md');
+
 async function prepRelease() {
     try {
         //create package dir
@@ -20,6 +22,9 @@ async function prepRelease() {
 
         //copy bin dir to package dir
         await fs.cp(binPath, `${rootPath}/bin/`, { recursive: true });
+
+        //copy readme file
+        await fs.copyFile(readmePath, `${rootPath}/README.md`);
 
         //copy package.json to package dir
         await fs.copyFile(pkgJsonPath, `${rootPath}/package.json`);
