@@ -17,17 +17,19 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16.x"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@redhorse-tech"
+          cache: yarn
       - name: Setup git user
         run: |
-          git config --global user.name namanicebed
-          git config --global user.email naman.icebed@gmail.com
+          git config --global user.name ${{ secrets.GH_DEPLOY_NAME }}
+          git config --global user.email ${{ secrets.GH_DEPLOY_EMAIL }}
       - name: Build and prepare release
-        run: npm run init && npm run release-alpha
+        run: yarn && yarn prepare-release
       - name: Release package
-        run: cd stallion-package && npm publish
+        run: yarn semantic-release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Push changes
-        run: git push
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GIT_AUTHOR_EMAIL: ${{ secrets.GH_DEPLOY_EMAIL }}
+          GIT_AUTHOR_NAME : ${{ secrets.GH_DEPLOY_NAME }}
+          GIT_COMMITTER_EMAIL: ${{ secrets.GH_DEPLOY_EMAIL }}
+          GIT_COMMITTER_NAME: ${{ secrets.GH_DEPLOY_NAME }}

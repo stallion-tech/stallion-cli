@@ -28,7 +28,7 @@ export namespace prompt {
     }
 
     export function confirmWithTimeout(message: string, timeoutMS: number, defaultResponse?: boolean): Promise<boolean> {
-        let timerId: NodeJS.Timer;
+        let timerId: any;
         const confirmPrompt = inquirer.prompt({
             type: 'confirm',
             name: 'confirm',
