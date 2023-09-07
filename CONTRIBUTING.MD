@@ -1,0 +1,72 @@
+# Contributing to React Native Async Storage
+
+Thank you for helping out with Stallion CLI! We'd like to make contributions as
+pleasent as possible, so here's a small guide of how we see it. Happy to hear
+your feedback about anything, so please let us know.
+
+## Tests
+
+Currently there are no tests configured but will be added soon
+
+## Sending a pull request
+
+When you're sending a pull request:
+
+- Communication is a key. If you want fix/add something, please open new/find
+  existing issue, so we can discuss it.
+- We prefer small pull requests focused on one change, as those are easier to
+  test/check.
+- Please make sure that all tests are passing on your local machine.
+- Please make sure you've run formatters and linters locally.
+  - In VS Code, you can press ⇧+Alt+F or ⇧⌥F to format the current file.
+    - To format C++ and Objective-C files, make sure you have the
+      [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
+      installed.
+    - To format JavaScript files, please install
+      [Prettier extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode).
+  - From the command line, you can run `yarn format:c` and `yarn format:js` to
+    format C-based languages and JavaScript respectively. The first command
+    requires that you've already installed
+    [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html).
+- Follow the template when opening a PR.
+
+## Commits and versioning
+
+All PRs are squashed into `main` branch and wrapped up in a single commit,
+following
+[conventional commit message](https://www.conventionalcommits.org/en/v1.0.0-beta.3).
+Combined with [semantic versioning](https://semver.org/), this allows us to have
+a frequent releases of the library.
+
+_Note_: We don't force this convention on Pull Requests from contributors, but
+it's a clean way to see what type of changes are made, so feel free to follow
+it.
+
+Most notably prefixes you'll see:
+
+- **fix**: Bug fixes, triggers _patch_ release
+- **feat**: New feature implemented, triggers _minor_
+- **chore**: Changes that are not affecting end user (CI config changes,
+  scripts, ["grunt work"](https://stackoverflow.com/a/26944812/3510245))
+- **docs**: Documentation changes.
+- **perf**: A code change that improves performance.
+- **refactor**: A code change that neither fixes a bug nor adds a feature.
+- **test**: Adding missing tests or correcting existing tests.
+
+## Release process
+
+We use [Semantic Release](http://semantic-release.org) to automatically release
+new versions of the library when changes are merged into `main` branch, which
+we plan to keep stable. Bug fixes take priority in the release order.
+
+## Reporting issues
+
+You can report issues on our
+[bug tracker](https://github.com/redhorse-tech/stallion-cli/issues).
+Please search for existing issues and follow the issue template when opening an
+one.
+
+## License
+
+By contributing to Stallion CLI, you agree that your contributions
+will be licensed under the **MIT** license.
