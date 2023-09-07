@@ -7,6 +7,7 @@ import {
     createEmptyTmpReleaseFolder,
     fileDoesNotExistOrIsDirectory,
     getReactNativeVersion,
+    checkForStallionEnabled,
     isValidPlatform,
     removeReactTmpDir,
     runHermesEmitBinaryCommand,
@@ -83,6 +84,12 @@ export default class PublishBundle extends Command {
             return failure(ErrorCodes.InvalidParameter, 'No react native project found in current directory');
         }
 
+        try {
+            checkForStallionEnabled();
+        } catch (e) {
+            return failure(ErrorCodes.Exception, e.toString());
+        }
+
         const contentTempRootPath = await fs.mkdtemp('stallion-temp');
         this.contentRootPath = path.join(contentTempRootPath, 'Stallion');
         mkdirp.sync(this.contentRootPath);
@@ -139,7 +146,7 @@ export default class PublishBundle extends Command {
             const FormData = require('form-data');
             const form = new FormData();
             form.append('bundle', createReadStream(filePath));
-            form.append('uploadPath', this.uploadPath);
+            form.append('uploadPath', this?.uploadPath?.toLowerCase());
             form.append('platform', this.platform);
             form.append('releaseNote', this.releaseNote);
             await client.post(Endpoints.UPLOAD_BUNDLE, form);

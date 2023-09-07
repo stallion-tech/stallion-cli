@@ -41,6 +41,22 @@ export function directoryExistsSync(dirname: string): boolean {
     return false;
 }
 
+export function checkForStallionEnabled() {
+    const output = childProcess.spawnSync(
+        'node',
+        ['node_modules/@redhorse-tech/react-native-stallion/src/nativeScripts/getStallionEnabled'],
+        { encoding: 'utf8' }
+    );
+    if (output.stderr) {
+        throw 'Stallion SDK is not installed. Please run npm install react-native-stallion';
+    }
+    const result = output.stdout.trim();
+    if (result === 'false') {
+        throw 'Stallion not enabled in stallion.config.js';
+    }
+    return true;
+}
+
 function getReactNativePackagePath(): string {
     const result = childProcess.spawnSync('node', ['--print', "require.resolve('react-native/package.json')"]);
     const packagePath = path.dirname(result.stdout.toString());

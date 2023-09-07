@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-
+const fs = require("fs")
+const rimraf = require("rimraf")
 const minMajorVersion = 10;
 const minMinorVersion = 0;
 
@@ -46,3 +47,15 @@ if (ensureNodeVersion()) {
 } else {
     process.exit(1);
 }
+
+['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((signal) =>
+    process.on(signal, () => {
+        process.exit(1);
+    })
+);
+
+process.on('exit', () => {
+    fs.readdirSync('./')
+        .filter((f) => f.includes('stallion-temp'))
+        .map((f) => rimraf.sync(f));
+});
