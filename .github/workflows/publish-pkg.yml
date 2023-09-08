@@ -23,7 +23,7 @@ jobs:
           git config --global user.name ${{ secrets.GH_DEPLOY_NAME }}
           git config --global user.email ${{ secrets.GH_DEPLOY_EMAIL }}
       - name: Build and prepare release
-        run: yarn && yarn prepare-release
+        run: yarn install --frozen-lockfile && yarn prepare-release
       - name: Release package
         run: yarn semantic-release
         env:

@@ -21,7 +21,8 @@
     "react native",
     "stallion",
     "deployments",
-    "testing"
+    "testing",
+    "cli"
   ],
   "bin": {
     "stallion": "./bin/stallion.js"
