@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/redhorse-tech/stallion-cli/compare/v1.0.0...v1.1.0) (2023-09-08)
+
+
+### Bug Fixes
+
+* updated node version to 14 ([cf9cef8](https://github.com/redhorse-tech/stallion-cli/commit/cf9cef8ff3e885b4e413f25f9a9853f189125f89))
+
+
+### Features
+
+* updated min node version to 10 ([90718b9](https://github.com/redhorse-tech/stallion-cli/commit/90718b95bbbee084d94af7a931984fe97a424972))
+
 # 1.0.0 (2023-09-08)
 
 
