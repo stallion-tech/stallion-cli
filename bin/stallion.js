@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const fs = require("fs")
 const rimraf = require("rimraf")
-const minMajorVersion = 12;
+const minMajorVersion = 10;
 const minMinorVersion = 0;
 
 function getCurrentVersion() {
