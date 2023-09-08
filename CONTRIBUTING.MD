@@ -1,4 +1,4 @@
-# Contributing to React Native Async Storage
+# Contributing to Stallion CLI
 
 Thank you for helping out with Stallion CLI! We'd like to make contributions as
 pleasent as possible, so here's a small guide of how we see it. Happy to hear

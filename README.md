@@ -17,9 +17,13 @@ check the [documentation](https://docs.redhorse.tech/docs/StallionCli/intro) for
 
 ## Contributing
 
-Please see the [contributing](./contributing.md) file
+Please see the [contributing](./CONTRIBUTING.md) file
 for an introduction to the codebase and what the various moving parts are.
 
 ## Open issues
 
 Check out [open issues](https://github.com/redhorse-tech/stallion-cli/issues) for a list of known issues, and discussions.
+
+## Code of Conduct
+
+You can find the code of conduct [here](./CODE_OF_CONDUCT.md)
