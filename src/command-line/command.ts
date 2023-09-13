@@ -53,7 +53,7 @@ export default class Command {
             try {
                 await this.clientFactory.get(Endpoints.PROFILE);
             } catch (e) {
-                return Promise.resolve(failure(ErrorCodes.Exception, 'cannot fetch profile!!'));
+                return Promise.resolve(failure(ErrorCodes.Exception, 'invalid token! please login again using "npx stallion login"'));
             }
 
             return await this.runCommand(this.clientFactory);

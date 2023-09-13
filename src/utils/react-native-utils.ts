@@ -44,7 +44,7 @@ export function directoryExistsSync(dirname: string): boolean {
 export function checkForStallionEnabled() {
     const output = childProcess.spawnSync(
         'node',
-        ['node_modules/@redhorse-tech/react-native-stallion/src/nativeScripts/getStallionEnabled'],
+        ['node_modules/react-native-stallion/src/nativeScripts/getStallionEnabled'],
         { encoding: 'utf8' }
     );
     if (output.stderr) {

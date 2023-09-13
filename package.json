@@ -12,8 +12,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/redhorse-tech/stallion-cli.git"
+    "url": "https://github.com/stallion-tech/stallion-cli.git"
   },
+  "homepage": "https://stalliontech.io/",
   "author": "Sherlock <sherlock@redhorse.tech>",
   "license": "MIT",
   "keywords": [
