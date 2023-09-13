@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/stallion-tech/stallion-cli/compare/v1.1.0...v1.1.1) (2023-09-13)
+
+
+### Bug Fixes
+
+* updated domain redirect and errors ([#12](https://github.com/stallion-tech/stallion-cli/issues/12)) ([aa5c648](https://github.com/stallion-tech/stallion-cli/commit/aa5c648fefe105754ee1e3518a06cc2282301495))
+
 # [1.1.0](https://github.com/redhorse-tech/stallion-cli/compare/v1.0.0...v1.1.0) (2023-09-08)
 
 
