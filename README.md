@@ -25,7 +25,7 @@ for an introduction to the codebase and what the various moving parts are.
 
 ## Open issues
 
-Check out [open issues](https://github.com/redhorse-tech/stallion-cli/issues) for a list of known issues, and discussions.
+Check out [open issues](https://github.com/stallion-tech/stallion-cli/issues) for a list of known issues, and discussions.
 
 ## Code of Conduct
 

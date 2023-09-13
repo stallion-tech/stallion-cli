@@ -62,7 +62,7 @@ we plan to keep stable. Bug fixes take priority in the release order.
 ## Reporting issues
 
 You can report issues on our
-[bug tracker](https://github.com/redhorse-tech/stallion-cli/issues).
+[bug tracker](https://github.com/stallion-tech/stallion-cli/issues).
 Please search for existing issues and follow the issue template when opening an
 one.
 
