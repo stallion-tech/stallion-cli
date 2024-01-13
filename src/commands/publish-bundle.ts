@@ -27,6 +27,9 @@ import * as rimraf from 'rimraf';
 export default class PublishBundle extends Command {
     constructor(args: CommandArgs) {
         super(args);
+        if (this.ciToken) {
+            this.skipAuthCheck();
+        }
     }
 
     @help('Name of JS bundle file, Default is index.android.bundle (android), main.jsbundle(ios)')
@@ -51,12 +54,6 @@ export default class PublishBundle extends Command {
     @longName('hermes-enabled')
     public useHermes: boolean;
 
-    @help('Access token, default is from root')
-    @shortName('t')
-    @longName('access-token')
-    @hasArg
-    public accessToken: string;
-
     @help('One liner release note')
     @shortName('r')
     @longName('release-note')
@@ -68,6 +65,12 @@ export default class PublishBundle extends Command {
     @longName('upload-path')
     @hasArg
     public uploadPath: string;
+
+    @help('CI token')
+    @shortName('ct')
+    @longName('ci-token')
+    @hasArg
+    public ciToken: string;
 
     private devMode: boolean = false;
 
@@ -135,12 +138,11 @@ export default class PublishBundle extends Command {
 
     private async uploadBundle(client: StallionApiClient, filePath: string) {
         let token = this.token;
-        if (this.accessToken) {
-            token = this.accessToken;
+        if (token) {
+            client.setHeaders({
+                'x-access-token': token
+            });
         }
-        client.setHeaders({
-            'x-access-token': token
-        });
 
         try {
             const FormData = require('form-data');
@@ -149,7 +151,12 @@ export default class PublishBundle extends Command {
             form.append('uploadPath', this?.uploadPath?.toLowerCase());
             form.append('platform', this.platform);
             form.append('releaseNote', this.releaseNote);
-            await client.post(Endpoints.UPLOAD_BUNDLE, form);
+            if (this.ciToken) {
+                form.append('ciToken', this.ciToken);
+                await client.post(Endpoints.UPLOAD_BUNDLE_WITH_TOKEN, form);
+            } else {
+                await client.post(Endpoints.UPLOAD_BUNDLE, form);
+            }
         } catch (e) {
             if (e.toString().includes('AxiosError:')) {
                 throw e?.response?.data?.errors?.data?.[0]?.message ?? 'something went wrong';

@@ -12,6 +12,7 @@ const readmePath = path.resolve(__dirname, '../', 'README.md');
 
 async function prepRelease() {
     try {
+        await deleteRoot();
         //create package dir
         await fs.mkdir(rootPath);
 
