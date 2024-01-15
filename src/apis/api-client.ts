@@ -44,4 +44,9 @@ export class StallionApiClient {
         const reqHeaders = { ...this.getHeaders(), ...headers };
         return StallionApiClient.axiosClient.post(url, body, { headers: reqHeaders });
     };
+
+    put = (url: string, body: any, headers?: AxiosRequestHeaders | any) => {
+        const reqHeaders = { ...this.getHeaders(), ...headers };
+        return StallionApiClient.axiosClient.put(url, body, { headers: reqHeaders });
+    };
 }

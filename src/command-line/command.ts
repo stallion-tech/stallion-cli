@@ -6,6 +6,8 @@ import { tokenStore } from '../token-store';
 import { Endpoints } from '../apis/endpoints';
 import { parseOptions } from './option-parser';
 import { getOptionsDescription, getPositionalOptionsDescription } from './option-decorators';
+import { out } from '../interaction-output';
+import * as chalk from 'chalk';
 
 export interface CommandArgs {
     command: string[];
@@ -17,6 +19,7 @@ export default class Command {
     protected command: string[];
     protected commandPath: string;
     protected clientFactory: StallionApiClient;
+    protected shouldSkipAuthCheck: boolean;
 
     public token: string;
 
@@ -28,6 +31,11 @@ export default class Command {
         this.commandPath = args.commandPath;
         this.command = args.command;
         this.commandArgs = args.args;
+        this.shouldSkipAuthCheck = false;
+    }
+
+    protected skipAuthCheck() {
+        this.shouldSkipAuthCheck = true;
     }
 
     async execute(): Promise<CommandResult> {
@@ -49,6 +57,10 @@ export default class Command {
     }
 
     protected async runCheckIfLoggedIn(): Promise<CommandResult> {
+        if (this.shouldSkipAuthCheck) {
+            out.text(chalk.yellow.dim('Skipping auth check and falling back to CI token...'));
+            return await this.runCommand(this.clientFactory);
+        }
         if (this.token) {
             try {
                 await this.clientFactory.get(Endpoints.PROFILE);

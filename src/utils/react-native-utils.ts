@@ -42,11 +42,9 @@ export function directoryExistsSync(dirname: string): boolean {
 }
 
 export function checkForStallionEnabled() {
-    const output = childProcess.spawnSync(
-        'node',
-        ['node_modules/react-native-stallion/src/nativeScripts/getStallionEnabled'],
-        { encoding: 'utf8' }
-    );
+    const output = childProcess.spawnSync('node', ['node_modules/react-native-stallion/src/nativeScripts/getStallionEnabled'], {
+        encoding: 'utf8'
+    });
     if (output.stderr) {
         throw 'Stallion SDK is not installed. Please run npm install react-native-stallion';
     }
@@ -218,14 +216,15 @@ function getHermesOSExe(): string {
     }
 }
 
+export function fileExists(filePath: string): boolean {
+    try {
+        return fs.statSync(filePath).isFile();
+    } catch (e) {
+        return false;
+    }
+}
+
 async function getHermesCommand(): Promise<string> {
-    const fileExists = (file: string): boolean => {
-        try {
-            return fs.statSync(file).isFile();
-        } catch (e) {
-            return false;
-        }
-    };
     // Hermes is bundled with react-native since 0.69
     const bundledHermesEngine = path.join(getReactNativePackagePath(), 'sdks', 'hermesc', getHermesOSBin(), getHermesOSExe());
     if (fileExists(bundledHermesEngine)) {
