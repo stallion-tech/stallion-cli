@@ -1,9 +1,13 @@
+[![stallionBanner](https://assets.stalliontech.io./stallion_logo.png)](https://stalliontech.io/)
+
+#### [Sign up With Stallion](https://console.stalliontech.io/) to start using
+
 # Stallion Command Line Interface (CLI)
 
-Stallion CLI is a unified tool for deploying react-native bundles to stallion servers.
+[![npm Version](https://img.shields.io/npm/v/stallion-cli.svg)](https://www.npmjs.com/package/stallion-cli) [![License](https://img.shields.io/npm/l/stallion-cli)](https://www.npmjs.com/package/stallion-cli)
 
-## Signup
-Signup to use Stallion [here](https://app.stalliontech.io/)
+
+Stallion CLI is a unified tool for deploying react-native bundles to stallion servers.
 
 ## Prerequisites
 
@@ -12,11 +16,22 @@ Node.js version 16 is recommended
 
 ## Installation
 
+### npm
+
 ```
 npm install --save-dev stallion-cli
 ```
 
-check the [documentation](https://docs.stalliontech.io/docs/StallionCli/intro) for more info 
+### yarn
+
+```
+yarn add -D stallion-cli
+```
+## Documentation
+
+Document contains installation steps and usage
+
+https://docs.stalliontech.io/docs/StallionCli/intro
 
 ## Contributing
 
