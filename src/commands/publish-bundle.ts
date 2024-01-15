@@ -12,16 +12,17 @@ import {
     removeReactTmpDir,
     runHermesEmitBinaryCommand,
     runReactNativeBundleCommand
-} from '../utils/react-native-utils';
+} from '../utils';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { mkdirp } from 'mkdirp';
 import * as chalk from 'chalk';
 import { out } from '../interaction-output';
-import { createZip } from '../utils/archiver';
+import { createZip } from '../utils';
 import { Endpoints } from '../apis/endpoints';
-import { createReadStream } from 'fs';
 import * as rimraf from 'rimraf';
+import { calculateSHA2565Hash } from '../utils';
+import { readFileSync } from 'fs';
 
 @help('Publish bundle')
 export default class PublishBundle extends Command {
@@ -145,23 +146,32 @@ export default class PublishBundle extends Command {
         }
 
         try {
-            const FormData = require('form-data');
-            const form = new FormData();
-            form.append('bundle', createReadStream(filePath));
-            form.append('uploadPath', this?.uploadPath?.toLowerCase());
-            form.append('platform', this.platform);
-            form.append('releaseNote', this.releaseNote);
-            if (this.ciToken) {
-                form.append('ciToken', this.ciToken);
-                await client.post(Endpoints.UPLOAD_BUNDLE_WITH_TOKEN, form);
-            } else {
-                await client.post(Endpoints.UPLOAD_BUNDLE, form);
+            const hash = calculateSHA2565Hash(filePath);
+            if (!hash) {
+                throw new Error('Invalid path or not a valid zip file.');
             }
+            const path = this.uploadPath?.toLowerCase();
+            const data: any = {
+                hash,
+                uploadPath: path,
+                platform: this.platform,
+                releaseNote: this.releaseNote
+            };
+            if (this.ciToken) {
+                data['ciToken'] = this.ciToken;
+            }
+            const { data: signedUrlResp } = await client.post(Endpoints.GENERATE_SIGNED_URL, data);
+            const url = signedUrlResp?.data?.url;
+            if (!url) {
+                throw new Error('Internal Error: invalid signed url');
+            }
+            await client.put(url, readFileSync(filePath));
         } catch (e) {
             if (e.toString().includes('AxiosError:')) {
-                throw e?.response?.data?.errors?.data?.[0]?.message ?? 'something went wrong';
+                throw e?.response?.data?.errors?.data?.[0]?.message ?? 'error while uploading bundle';
+            } else {
+                throw new Error(e);
             }
-            throw new Error(e.toString());
         }
     }
 }
