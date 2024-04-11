@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/stallion-tech/stallion-cli/compare/v1.1.2...v1.1.3) (2024-04-11)
+
+
+### Bug Fixes
+
+* removed check for stallion.config.js ([#14](https://github.com/stallion-tech/stallion-cli/issues/14)) ([08fa8bf](https://github.com/stallion-tech/stallion-cli/commit/08fa8bf480d098970ae3a388decc8ad38d19fa9c))
+
 ## [1.1.2](https://github.com/stallion-tech/stallion-cli/compare/v1.1.1...v1.1.2) (2024-01-15)
 
 
