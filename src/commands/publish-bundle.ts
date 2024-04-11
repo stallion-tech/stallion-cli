@@ -7,7 +7,6 @@ import {
     createEmptyTmpReleaseFolder,
     fileDoesNotExistOrIsDirectory,
     getReactNativeVersion,
-    checkForStallionEnabled,
     isValidPlatform,
     removeReactTmpDir,
     runHermesEmitBinaryCommand,
@@ -88,11 +87,14 @@ export default class PublishBundle extends Command {
             return failure(ErrorCodes.InvalidParameter, 'No react native project found in current directory');
         }
 
-        try {
-            checkForStallionEnabled();
-        } catch (e) {
-            return failure(ErrorCodes.Exception, e.toString());
-        }
+        /**
+         *  @removed: The check for stallion.config.js is no longer required and will be removed in future releases
+         * try {
+         *        checkForStallionEnabled();
+         *     } catch (e) {
+         *        return failure(ErrorCodes.Exception, e.toString());
+         *   }
+         */
 
         const contentTempRootPath = await fs.mkdtemp('stallion-temp');
         this.contentRootPath = path.join(contentTempRootPath, 'Stallion');
