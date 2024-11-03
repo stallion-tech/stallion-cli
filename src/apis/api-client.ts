@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestHeaders } from 'axios';
 
 export class StallionApiClient {
-    private static BASE_URL = 'https://stallion-api.redhorse.tech/api/v1';
+    private static BASE_URL = 'http://localhost:8000/api/v1';
 
     private static INSTANCE: StallionApiClient;
 
@@ -35,12 +35,12 @@ export class StallionApiClient {
         });
     };
 
-    get = (url: string, headers?: AxiosRequestHeaders) => {
+    get = (url: string, headers?: AxiosRequestHeaders | any) => {
         const reqHeaders = { ...this.getHeaders(), ...headers };
         return StallionApiClient.axiosClient.get(url, { headers: reqHeaders });
     };
 
-    post = (url: string, body: any, headers?: AxiosRequestHeaders) => {
+    post = (url: string, body: any, headers?: AxiosRequestHeaders | any) => {
         const reqHeaders = { ...this.getHeaders(), ...headers };
         return StallionApiClient.axiosClient.post(url, body, { headers: reqHeaders });
     };

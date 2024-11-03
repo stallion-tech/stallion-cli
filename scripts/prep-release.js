@@ -9,6 +9,7 @@ const distPath = path.resolve(__dirname, '../', 'dist');
 const binPath = path.resolve(__dirname, '../', 'bin');
 const pkgJsonPath = path.resolve(__dirname, '../', 'package.json');
 const readmePath = path.resolve(__dirname, '../', 'README.md');
+const sourcesPath = path.resolve(__dirname, '../src/sources');
 
 async function prepRelease() {
     try {
@@ -23,6 +24,9 @@ async function prepRelease() {
 
         //copy bin dir to package dir
         await fs.cp(binPath, `${rootPath}/bin/`, { recursive: true });
+
+        //copy sources
+        await fs.cp(sourcesPath, `${rootPath}/dist/sources`, { recursive: true });
 
         //copy readme file
         await fs.copyFile(readmePath, `${rootPath}/README.md`);

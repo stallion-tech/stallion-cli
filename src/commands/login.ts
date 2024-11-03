@@ -8,6 +8,8 @@ import * as os from 'os';
 import { Endpoints } from '../apis/endpoints';
 import { tokenStore, TokenValueType } from '../token-store';
 import * as chalk from 'chalk';
+import { startAuthServer } from '../utils/login/server';
+
 
 @help('Log in and save token')
 export default class Login extends Command {
@@ -16,14 +18,21 @@ export default class Login extends Command {
     }
 
     async runCheckIfLoggedIn(): Promise<CommandResult> {
-        out.text(`Opening your browser... ${os.EOL}• Visit ${Endpoints.CLI_LOGIN} and enter the code:`);
-        opener(Endpoints.CLI_LOGIN);
-        const token = await prompt('Access code from browser: ');
-        const data: TokenValueType = { id: null, token: token };
-        const status = await this.login(data);
-        if (!status) return failure(ErrorCodes.Exception, 'something went wrong');
-        out.text(chalk.green('\nToken saved, Login success!!'));
-        return success();
+        try {
+            out.text(chalk.green(`Logging into Stallion via Console: ${Endpoints.CLI_LOGIN}`))
+            await startAuthServer()
+            return success();
+        }catch(e) {
+            out.text(chalk.red("cannot use autologin, some error occured. falling back to legacy login..."));
+            out.text(`Opening your browser... ${os.EOL}• If the browser failes to open, Visit ${Endpoints.CLI_LOGIN} and enter the token here:`);
+            opener(Endpoints.CLI_LOGIN);
+            const token = await prompt('Access code from browser: ');
+            const data: TokenValueType = { id: null, token: token };
+            const status = await this.login(data);
+            if (!status) return failure(ErrorCodes.Exception, 'something went wrong');
+            out.text(chalk.green('\nToken saved, Login success!!'));
+            return success();
+        }
     }
 
     private async login(token: TokenValueType) {
@@ -34,4 +43,6 @@ export default class Login extends Command {
             return false;
         }
     }
+
+   
 }
