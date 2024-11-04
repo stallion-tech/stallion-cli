@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestHeaders } from 'axios';
 
 export class StallionApiClient {
-    private static BASE_URL = 'https://stallion-api.redhorse.tech/api/v1';
+    private static BASE_URL = 'https://api.stalliontech.io/api/v1';
 
     private static INSTANCE: StallionApiClient;
 
