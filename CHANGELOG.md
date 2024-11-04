@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/stallion-tech/stallion-cli/compare/v1.1.4...v2.0.0) (2024-11-04)
+
+
+### Features
+
+* added Stallion 2.0 changes ([#17](https://github.com/stallion-tech/stallion-cli/issues/17)) ([6bfe630](https://github.com/stallion-tech/stallion-cli/commit/6bfe630483dd15073ae02c111748c4e8f85e6a38))
+
+
+### BREAKING CHANGES
+
+* Stallion 2.0 update
+
 ## [1.1.4](https://github.com/stallion-tech/stallion-cli/compare/v1.1.3...v1.1.4) (2024-11-04)
 
 
