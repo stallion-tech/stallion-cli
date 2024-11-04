@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/stallion-tech/stallion-cli/compare/v1.1.3...v1.1.4) (2024-11-04)
+
+
+### Reverts
+
+* Revert "feat!: stallion 2.0 cli update (#15)" (#16) ([c685692](https://github.com/stallion-tech/stallion-cli/commit/c6856929ebd20da9af198b7cb819e11d60a212ff)), closes [#15](https://github.com/stallion-tech/stallion-cli/issues/15) [#16](https://github.com/stallion-tech/stallion-cli/issues/16)
+
 ## [1.1.3](https://github.com/stallion-tech/stallion-cli/compare/v1.1.2...v1.1.3) (2024-04-11)
 
 
