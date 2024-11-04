@@ -1,14 +1,13 @@
 import { StallionApiClient } from '../apis/api-client';
 import * as path from 'path';
-import { CommandResult, ErrorCodes, failure, success } from './command-result';
-import { tokenStore, TokenValueType } from '../token-store';
+import { CommandResult, ErrorCodes, failure, notLoggedIn } from './command-result';
+import { scriptName } from '../constants';
+import { tokenStore } from '../token-store';
 import { Endpoints } from '../apis/endpoints';
 import { parseOptions } from './option-parser';
 import { getOptionsDescription, getPositionalOptionsDescription } from './option-decorators';
-import { out, prompt } from '../interaction-output';
+import { out } from '../interaction-output';
 import * as chalk from 'chalk';
-import * as os from 'os';
-const opener = require('opener');
 
 export interface CommandArgs {
     command: string[];
@@ -66,38 +65,12 @@ export default class Command {
             try {
                 await this.clientFactory.get(Endpoints.PROFILE);
             } catch (e) {
-                await this.openLoginFlow(true)
+                return Promise.resolve(failure(ErrorCodes.Exception, 'invalid token! please login again using "npx stallion login"'));
             }
 
             return await this.runCommand(this.clientFactory);
         }
-        out.text(chalk.red(`${os.EOL}Command '${this.command.join(' ')}' requires a logged in user.`))
-        out.text(chalk.magenta(`${os.EOL}Initializing login flow...`))
-        return this.openLoginFlow(true);
-    }
-
-    protected async openLoginFlow(runNextCommand?: boolean): Promise<CommandResult> {
-        out.text(`Opening your browser... ${os.EOL}• Visit ${Endpoints.CLI_LOGIN} and enter the code:`);
-        opener(Endpoints.CLI_LOGIN);
-        const token = await prompt('Access code from browser: ');
-        const data: TokenValueType = { id: null, token: token };
-        const status = await this.login(data);
-        if (!status) return failure(ErrorCodes.Exception, 'something went wrong');
-        out.text(chalk.green('\nToken saved, Login success!!'));
-        if(runNextCommand) {
-            return await this.runCommand(this.clientFactory);
-        }
-        return success();
-    }
-
-    protected async login(data: TokenValueType) {
-        try {
-            await tokenStore.set('ACCESS_TOKEN', data);
-            this.token = data.token
-            return true;
-        } catch (e) {
-            return false;
-        }
+        return Promise.resolve(notLoggedIn(`${scriptName} ${this.command.join(' ')}`));
     }
 
     protected async runCommand(client: StallionApiClient): Promise<CommandResult> {
