@@ -51,8 +51,8 @@ export default class PublishBundle extends Command {
     public platform: string;
 
     @help('Enable hermes')
-    @longName('hermes-enabled')
-    public useHermes: boolean;
+    @longName('hermes-disabled')
+    public disableHermes: boolean;
 
     @help('One liner release note')
     @shortName('r')
@@ -120,9 +120,9 @@ export default class PublishBundle extends Command {
             createEmptyTmpReleaseFolder(this.contentRootPath);
             removeReactTmpDir();
             await runReactNativeBundleCommand(this.bundleName, this.entryFile, this.contentRootPath, this.platform, this.devMode);
-
-            const isHermesEnabled = this.useHermes;
-            if (isHermesEnabled) {
+           
+            const isHermesDisabled = this.disableHermes;
+            if (!isHermesDisabled) {
                 await runHermesEmitBinaryCommand(this.bundleName, this.contentRootPath);
             }
             out.text(chalk.cyan('\nArchiving Bundle'));
