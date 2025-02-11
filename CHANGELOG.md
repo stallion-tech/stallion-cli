@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/stallion-tech/stallion-cli/compare/v2.0.1...v2.0.2) (2025-02-11)
+
+
+### Bug Fixes
+
+* improved hermes logging ([4094aa6](https://github.com/stallion-tech/stallion-cli/commit/4094aa6bbf927f1f87b2f51f57b17db0f3e5f7df))
+
 ## [2.0.1](https://github.com/stallion-tech/stallion-cli/compare/v2.0.0...v2.0.1) (2025-02-01)
 
 
