@@ -54,6 +54,10 @@ export default class PublishBundle extends Command {
     @longName('hermes-disabled')
     public disableHermes: boolean;
 
+    @help('Enable hermes logs')
+    @longName('hermes-logs')
+    public hermesLogs: boolean;
+
     @help('One liner release note')
     @shortName('r')
     @longName('release-note')
@@ -123,7 +127,7 @@ export default class PublishBundle extends Command {
            
             const isHermesDisabled = this.disableHermes;
             if (!isHermesDisabled) {
-                await runHermesEmitBinaryCommand(this.bundleName, this.contentRootPath);
+                await runHermesEmitBinaryCommand(this.bundleName, this.contentRootPath, this.hermesLogs);
             }
             out.text(chalk.cyan('\nArchiving Bundle'));
             await createZip(this.contentRootPath, contentTempRootPath);
