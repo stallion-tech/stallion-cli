@@ -142,7 +142,7 @@ export async function runReactNativeBundleCommand(
     });
 }
 
-export async function runHermesEmitBinaryCommand(bundleName: string, outputFolder: string): Promise<void> {
+export async function runHermesEmitBinaryCommand(bundleName: string, outputFolder: string, hermesLogs: boolean = false): Promise<void> {
     const hermesArgs: string[] = [];
     Array.prototype.push.apply(hermesArgs, [
         '-emit-binary',
@@ -154,21 +154,38 @@ export async function runHermesEmitBinaryCommand(bundleName: string, outputFolde
     out.text(chalk.cyan('Converting JS bundle to byte code via Hermes, running command:\n'));
     const hermesCommand = await getHermesCommand();
     const hermesProcess = childProcess.spawn(hermesCommand, hermesArgs);
-    out.text(`${hermesCommand} ${hermesArgs.join(' ')}`);
-
+    out.text(`Running: ${hermesCommand} ${hermesArgs.join(' ')}`);
+    let logFile: fs.WriteStream | null = null
+    let isWarned = false
+    if(hermesLogs) {
+        logFile = fs.createWriteStream('output.log', { flags: 'a' }); 
+    }
     return new Promise<void>((resolve, reject) => {
         hermesProcess.stdout.on('data', (data: Buffer) => {
             out.text(data.toString().trim());
         });
 
         hermesProcess.stderr.on('data', (data: Buffer) => {
-            console.error(data.toString().trim());
+            if(isWarned) {
+                if(hermesLogs && logFile) {
+                    logFile.write(data.toString().trim())
+                }
+                return
+            }
+            isWarned = true
+            out.text(chalk.yellow('⚠️ Hermes command executed successfully with some warnings. If you need full logs, use the --hermes-logs command.\n'));
         });
 
         hermesProcess.on('close', (exitCode: number, signal: string) => {
-            if (exitCode !== 0) {
-                reject(new Error(`"hermes" command failed (exitCode=${exitCode}, signal=${signal}).`));
+            if(hermesLogs && logFile) {
+                out.text(chalk.yellow('📕 Done writing logs in output.log file.\n'));
+                logFile.end()
             }
+
+            if (exitCode !== 0) {
+                reject(new Error(`"❌ hermes" command failed (exitCode=${exitCode}, signal=${signal}).\n`));
+            }
+
             // Copy HBC bundle to overwrite JS bundle
             const source = path.join(outputFolder, bundleName + '.hbc');
             const destination = path.join(outputFolder, bundleName);
