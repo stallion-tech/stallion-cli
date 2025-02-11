@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/stallion-tech/stallion-cli/compare/v2.0.0...v2.0.1) (2025-02-01)
+
+
+### Bug Fixes
+
+* hermes enabled by default ([6770a74](https://github.com/stallion-tech/stallion-cli/commit/6770a746a190ca1778c9f59957a1c38ccdda0c44))
+
 # [2.0.0](https://github.com/stallion-tech/stallion-cli/compare/v1.1.4...v2.0.0) (2024-11-04)
 
 
