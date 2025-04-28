@@ -102,8 +102,6 @@ export async function runReactNativeBundleCommand(
     devMode: boolean
 ) {
     const reactNativeBundleArgs: string[] = [];
-    const reactNativeCliPath = getCliPath();
-    console.log(reactNativeCliPath);
     Array.prototype.push.apply(reactNativeBundleArgs, [
         getCliPath(),
         'bundle',
@@ -118,7 +116,7 @@ export async function runReactNativeBundleCommand(
         '--platform',
         platform
     ]);
-    out.text(chalk.cyan('Running "react-native bundle" command:\n'));
+    out.text(chalk.cyanBright('Running "react-native bundle" command:\n'));
 
     const reactNativeBundleProcess = childProcess.spawn('node', reactNativeBundleArgs);
     out.text(`node ${reactNativeBundleArgs.join(' ')}`);
@@ -142,7 +140,11 @@ export async function runReactNativeBundleCommand(
     });
 }
 
-export async function runHermesEmitBinaryCommand(bundleName: string, outputFolder: string, hermesLogs: boolean = false): Promise<void> {
+export async function runHermesEmitBinaryCommand(
+    bundleName: string,
+    outputFolder: string,
+    hermesLogs: boolean = false
+): Promise<void> {
     const hermesArgs: string[] = [];
     Array.prototype.push.apply(hermesArgs, [
         '-emit-binary',
@@ -155,10 +157,10 @@ export async function runHermesEmitBinaryCommand(bundleName: string, outputFolde
     const hermesCommand = await getHermesCommand();
     const hermesProcess = childProcess.spawn(hermesCommand, hermesArgs);
     out.text(`Running: ${hermesCommand} ${hermesArgs.join(' ')}`);
-    let logFile: fs.WriteStream | null = null
-    let isWarned = false
-    if(hermesLogs) {
-        logFile = fs.createWriteStream('output.log', { flags: 'a' }); 
+    let logFile: fs.WriteStream | null = null;
+    let isWarned = false;
+    if (hermesLogs) {
+        logFile = fs.createWriteStream('output.log', { flags: 'a' });
     }
     return new Promise<void>((resolve, reject) => {
         hermesProcess.stdout.on('data', (data: Buffer) => {
@@ -166,20 +168,24 @@ export async function runHermesEmitBinaryCommand(bundleName: string, outputFolde
         });
 
         hermesProcess.stderr.on('data', (data: Buffer) => {
-            if(isWarned) {
-                if(hermesLogs && logFile) {
-                    logFile.write(data.toString().trim())
+            if (isWarned) {
+                if (hermesLogs && logFile) {
+                    logFile.write(data.toString().trim());
                 }
-                return
+                return;
             }
-            isWarned = true
-            out.text(chalk.yellow('⚠️ Hermes command executed successfully with some warnings. If you need full logs, use the --hermes-logs command.\n'));
+            isWarned = true;
+            out.text(
+                chalk.yellow(
+                    '⚠️ Hermes command executed successfully with some warnings. If you need full logs, use the --hermes-logs command.\n'
+                )
+            );
         });
 
         hermesProcess.on('close', (exitCode: number, signal: string) => {
-            if(hermesLogs && logFile) {
+            if (hermesLogs && logFile) {
                 out.text(chalk.yellow('📕 Done writing logs in output.log file.\n'));
-                logFile.end()
+                logFile.end();
             }
 
             if (exitCode !== 0) {

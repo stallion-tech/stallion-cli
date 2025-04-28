@@ -9,6 +9,7 @@ import * as tty from 'tty';
 
 const Table = require('cli-table3');
 const Spinner = require('cli-spinner').Spinner;
+const ora = require('ora');
 
 import { terminal } from './terminal';
 
@@ -30,6 +31,31 @@ export function progress<T>(title: string, action: Promise<T>): Promise<T> {
             })
             .catch((ex) => {
                 spinner.stop(true);
+                throw ex;
+            });
+    } else {
+        return action;
+    }
+}
+
+export function progressV2<T>(title: string, action: Promise<T>): Promise<T> {
+    const stdoutIsTerminal = tty.isatty(1);
+
+    if (!formatIsParsingCompatible() && !isQuiet() && stdoutIsTerminal) {
+        // Choose a spinner from cli-spinners (example: 10th spinner)
+
+        const spinner = ora({
+            text: title,
+            color: 'white'
+        }).start();
+
+        return action
+            .then((result) => {
+                spinner.succeed();
+                return result;
+            })
+            .catch((ex) => {
+                spinner.fail();
                 throw ex;
             });
     } else {

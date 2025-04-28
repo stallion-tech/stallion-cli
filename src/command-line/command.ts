@@ -9,7 +9,8 @@ import { out, prompt } from '../interaction-output';
 import * as chalk from 'chalk';
 import * as os from 'os';
 const opener = require('opener');
-
+import * as figlet from 'figlet';
+import { retro } from 'gradient-string';
 export interface CommandArgs {
     command: string[];
     commandPath: string;
@@ -41,6 +42,12 @@ export default class Command {
 
     async execute(): Promise<CommandResult> {
         this.clientFactory = new StallionApiClient();
+        const banner = await this.showBanner();
+        out.text(retro.multiline(banner));
+
+        out.text(
+            '\n' + chalk.whiteBright(`⚡ Welcome to the Stallion CLI ${chalk.bold(chalk.greenBright(`v${this.getVersion()}`))} ⚡ \n`)
+        );
         const token = await this.getToken();
         if (token) {
             this.token = token;
@@ -66,13 +73,13 @@ export default class Command {
             try {
                 await this.clientFactory.get(Endpoints.PROFILE);
             } catch (e) {
-                await this.openLoginFlow(true)
+                await this.openLoginFlow(true);
             }
 
             return await this.runCommand(this.clientFactory);
         }
-        out.text(chalk.red(`${os.EOL}Command '${this.command.join(' ')}' requires a logged in user.`))
-        out.text(chalk.magenta(`${os.EOL}Initializing login flow...`))
+        out.text(chalk.red(`${os.EOL}Command '${this.command.join(' ')}' requires a logged in user.`));
+        out.text(chalk.magenta(`${os.EOL}Initializing login flow...`));
         return this.openLoginFlow(true);
     }
 
@@ -84,16 +91,36 @@ export default class Command {
         const status = await this.login(data);
         if (!status) return failure(ErrorCodes.Exception, 'something went wrong');
         out.text(chalk.green('\nToken saved, Login success!!'));
-        if(runNextCommand) {
+        if (runNextCommand) {
             return await this.runCommand(this.clientFactory);
         }
         return success();
     }
 
+    private async showBanner(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            figlet.text(
+                'STALLION',
+                {
+                    font: 'Larry 3D',
+                    horizontalLayout: 'default',
+                    verticalLayout: 'default'
+                },
+                (err, data) => {
+                    if (err) {
+                        reject('Something went wrong with figlet...');
+                        return;
+                    }
+                    resolve(data);
+                }
+            );
+        });
+    }
+
     protected async login(data: TokenValueType) {
         try {
             await tokenStore.set('ACCESS_TOKEN', data);
-            this.token = data.token
+            this.token = data.token;
             return true;
         } catch (e) {
             return false;

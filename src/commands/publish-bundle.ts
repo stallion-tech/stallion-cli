@@ -22,7 +22,7 @@ import { Endpoints } from '../apis/endpoints';
 import * as rimraf from 'rimraf';
 import { calculateSHA2565Hash } from '../utils';
 import { readFileSync } from 'fs';
-
+import { signBundle } from '../utils/sign-bundle';
 @help('Publish bundle')
 export default class PublishBundle extends Command {
     constructor(args: CommandArgs) {
@@ -76,6 +76,12 @@ export default class PublishBundle extends Command {
     @hasArg
     public ciToken: string;
 
+    @help('Private Key')
+    @shortName('pk')
+    @longName('private-key')
+    @hasArg
+    public privateKey: string;
+
     private devMode: boolean = false;
 
     private contentRootPath: string;
@@ -90,15 +96,6 @@ export default class PublishBundle extends Command {
         if (!getReactNativeVersion()) {
             return failure(ErrorCodes.InvalidParameter, 'No react native project found in current directory');
         }
-
-        /**
-         *  @removed: The check for stallion.config.js is no longer required and will be removed in future releases
-         * try {
-         *        checkForStallionEnabled();
-         *     } catch (e) {
-         *        return failure(ErrorCodes.Exception, e.toString());
-         *   }
-         */
 
         const contentTempRootPath = await fs.mkdtemp('stallion-temp');
         this.contentRootPath = path.join(contentTempRootPath, 'Stallion');
@@ -124,16 +121,19 @@ export default class PublishBundle extends Command {
             createEmptyTmpReleaseFolder(this.contentRootPath);
             removeReactTmpDir();
             await runReactNativeBundleCommand(this.bundleName, this.entryFile, this.contentRootPath, this.platform, this.devMode);
-           
+
             const isHermesDisabled = this.disableHermes;
             if (!isHermesDisabled) {
                 await runHermesEmitBinaryCommand(this.bundleName, this.contentRootPath, this.hermesLogs);
             }
-            out.text(chalk.cyan('\nArchiving Bundle'));
-            await createZip(this.contentRootPath, contentTempRootPath);
+
+            if (this.privateKey) {
+                await out.progressV2(chalk.cyanBright('Signing Bundle...'), signBundle(this.contentRootPath, this.privateKey));
+            }
+            await out.progressV2(chalk.cyanBright('Archiving Bundle...'), createZip(this.contentRootPath, contentTempRootPath));
             const zipPath = path.resolve(contentTempRootPath, 'build.zip');
-            await out.progress('Publishing bundle', this.uploadBundle(client, zipPath));
-            out.text(chalk.green('\nSuccess!, Published new version'));
+            await out.progressV2(chalk.cyanBright('Publishing bundle...'), this.uploadBundle(client, zipPath));
+            out.text(chalk.greenBright('\nSuccess!, Published new version'));
         } catch (e) {
             return failure(ErrorCodes.Exception, e.toString());
         } finally {
