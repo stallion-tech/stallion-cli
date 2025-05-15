@@ -1,262 +1,289 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as rimraf from 'rimraf';
-import { out } from '../interaction-output';
-import * as chalk from 'chalk';
-import * as childProcess from 'child_process';
-import { coerce, compare } from 'semver';
+import * as path from "path";
+import * as fs from "fs";
+import * as os from "os";
+import * as rimraf from "rimraf";
+import { logger } from "./logger";
+import * as childProcess from "child_process";
+import { coerce, compare } from "semver";
+
+function findUpwardReactNativePackageJson(
+  startDir: string = process.cwd()
+): string | null {
+  let current = startDir;
+
+  while (current !== path.parse(current).root) {
+    const candidate = path.join(
+      current,
+      "node_modules",
+      "react-native",
+      "package.json"
+    );
+    if (fs.existsSync(candidate)) return candidate;
+    current = path.dirname(current);
+  }
+
+  return null;
+}
 
 export function getReactNativeVersion(): string {
-    let packageJsonFilename;
-    let projectPackageJson;
-    try {
-        packageJsonFilename = path.join(process.cwd(), 'package.json');
-        projectPackageJson = JSON.parse(fs.readFileSync(packageJsonFilename, 'utf-8'));
-    } catch (error) {
-        throw new Error(
-            `Unable to find or read "package.json" in the CWD. The "publish-bundle" command must be executed in a React Native project folder.`
-        );
-    }
-
-    const projectName: string = projectPackageJson.name;
-    if (!projectName) {
-        throw new Error(`The "package.json" file in the CWD does not have the "name" field set.`);
-    }
-
-    return (
-        (projectPackageJson.dependencies && projectPackageJson.dependencies['react-native']) ||
-        (projectPackageJson.devDependencies && projectPackageJson.devDependencies['react-native'])
+  const rnPackageJsonPath = findUpwardReactNativePackageJson();
+  if (!rnPackageJsonPath) {
+    throw new Error(
+      `Unable to locate \"react-native/package.json\" from the current directory. Make sure you're inside a React Native project.`
     );
+  }
+
+  const rnPackageJson = JSON.parse(fs.readFileSync(rnPackageJsonPath, "utf-8"));
+  return rnPackageJson.version;
 }
 
 export function directoryExistsSync(dirname: string): boolean {
-    try {
-        return fs.statSync(dirname).isDirectory();
-    } catch (err) {
-        if (err.code !== 'ENOENT') {
-            throw err;
-        }
+  try {
+    return fs.statSync(dirname).isDirectory();
+  } catch (err: any) {
+    if (err.code !== "ENOENT") {
+      throw err;
     }
-    return false;
-}
-
-export function checkForStallionEnabled() {
-    const output = childProcess.spawnSync('node', ['node_modules/react-native-stallion/src/nativeScripts/getStallionEnabled'], {
-        encoding: 'utf8'
-    });
-    if (output.stderr) {
-        throw 'Stallion SDK is not installed. Please run npm install react-native-stallion';
-    }
-    const result = output.stdout.trim();
-    if (result === 'false') {
-        throw 'Stallion not enabled in stallion.config.js';
-    }
-    return true;
+  }
+  return false;
 }
 
 function getReactNativePackagePath(): string {
-    const result = childProcess.spawnSync('node', ['--print', "require.resolve('react-native/package.json')"]);
-    const packagePath = path.dirname(result.stdout.toString());
-    if (result.status === 0 && directoryExistsSync(packagePath)) {
-        return packagePath;
-    }
+  const rnPackageJsonPath = findUpwardReactNativePackageJson();
+  if (rnPackageJsonPath) {
+    return path.dirname(rnPackageJsonPath);
+  }
 
-    return path.join('node_modules', 'react-native');
+  const result = childProcess.spawnSync("node", [
+    "--print",
+    "require.resolve('react-native/package.json')",
+  ]);
+  const packagePath = path.dirname(result.stdout.toString().trim());
+  if (result.status === 0 && directoryExistsSync(packagePath)) {
+    return packagePath;
+  }
+
+  return path.join("node_modules", "react-native");
 }
 
 export function isValidPlatform(platform: string): boolean {
-    return platform?.toLowerCase() === 'android' || platform?.toLowerCase() === 'ios';
+  return (
+    platform?.toLowerCase() === "android" || platform?.toLowerCase() === "ios"
+  );
 }
 
 export function fileDoesNotExistOrIsDirectory(path: string): boolean {
-    try {
-        return isDirectory(path);
-    } catch (error) {
-        return true;
-    }
+  try {
+    return isDirectory(path);
+  } catch (error) {
+    return true;
+  }
 }
 
 export function isDirectory(path: string): boolean {
-    return fs.statSync(path).isDirectory();
+  return fs.statSync(path).isDirectory();
 }
 
 export function createEmptyTmpReleaseFolder(folderPath: string): void {
-    rimraf.sync(folderPath);
-    fs.mkdirSync(folderPath);
+  rimraf.sync(folderPath);
+  fs.mkdirSync(folderPath);
 }
 
 export function removeReactTmpDir(): void {
-    rimraf.sync(`${os.tmpdir()}/react-*`);
+  rimraf.sync(`${os.tmpdir()}/react-*`);
 }
 
 function getCliPath(): string {
-    return path.join('node_modules', '.bin', 'react-native');
+  return path.join("node_modules", ".bin", "react-native");
 }
 
 export async function runReactNativeBundleCommand(
-    bundleName: string,
-    entryFile: string,
-    outputFolder: string,
-    platform: string,
-    devMode: boolean
+  bundleName: string,
+  entryFile: string,
+  outputFolder: string,
+  platform: string,
+  devMode: boolean
 ) {
-    const reactNativeBundleArgs: string[] = [];
-    Array.prototype.push.apply(reactNativeBundleArgs, [
-        getCliPath(),
-        'bundle',
-        '--dev',
-        devMode,
-        '--assets-dest',
-        outputFolder,
-        '--bundle-output',
-        path.join(outputFolder, bundleName),
-        '--entry-file',
-        entryFile,
-        '--platform',
-        platform
-    ]);
-    out.text(chalk.cyanBright('Running "react-native bundle" command:\n'));
+  const reactNativeBundleArgs: string[] = [];
+  Array.prototype.push.apply(reactNativeBundleArgs, [
+    getCliPath(),
+    "bundle",
+    "--dev",
+    devMode,
+    "--assets-dest",
+    outputFolder,
+    "--bundle-output",
+    path.join(outputFolder, bundleName),
+    "--entry-file",
+    entryFile,
+    "--platform",
+    platform,
+  ]);
+  logger.info(`Running \"react-native bundle\" command`);
+  logger.subtitle(reactNativeBundleArgs.join(" "));
 
-    const reactNativeBundleProcess = childProcess.spawn('node', reactNativeBundleArgs);
-    out.text(`node ${reactNativeBundleArgs.join(' ')}`);
+  const reactNativeBundleProcess = childProcess.spawn(
+    "node",
+    reactNativeBundleArgs
+  );
 
-    return new Promise<void>((resolve, reject) => {
-        reactNativeBundleProcess.stdout.on('data', (data: Buffer) => {
-            out.text(data.toString().trim());
-        });
-
-        reactNativeBundleProcess.stderr.on('data', (data: Buffer) => {
-            console.error(data.toString().trim());
-        });
-
-        reactNativeBundleProcess.on('close', (exitCode: number, signal: string) => {
-            if (exitCode !== 0) {
-                reject(new Error(`"react-native bundle" command failed (exitCode=${exitCode}, signal=${signal}).`));
-            }
-
-            resolve(null as void);
-        });
+  return new Promise<void>((resolve, reject) => {
+    reactNativeBundleProcess.stdout.on("data", (data: Buffer) => {
+      console.log(data.toString().trim());
     });
+
+    reactNativeBundleProcess.stderr.on("data", (data: Buffer) => {
+      logger.error(data.toString().trim());
+    });
+
+    reactNativeBundleProcess.on("close", (exitCode: number, signal: string) => {
+      if (exitCode !== 0) {
+        reject(
+          new Error(
+            `\"react-native bundle\" command failed (exitCode=${exitCode}, signal=${signal}).`
+          )
+        );
+      }
+
+      resolve();
+    });
+  });
 }
 
 export async function runHermesEmitBinaryCommand(
-    bundleName: string,
-    outputFolder: string,
-    hermesLogs: boolean = false
+  bundleName: string,
+  outputFolder: string,
+  hermesLogs: boolean = false
 ): Promise<void> {
-    const hermesArgs: string[] = [];
-    Array.prototype.push.apply(hermesArgs, [
-        '-emit-binary',
-        '-out',
-        path.join(outputFolder, bundleName + '.hbc'),
-        path.join(outputFolder, bundleName)
-    ]);
+  const hermesArgs: string[] = [];
+  Array.prototype.push.apply(hermesArgs, [
+    "-emit-binary",
+    "-out",
+    path.join(outputFolder, bundleName + ".hbc"),
+    path.join(outputFolder, bundleName),
+  ]);
 
-    out.text(chalk.cyan('Converting JS bundle to byte code via Hermes, running command:\n'));
-    const hermesCommand = await getHermesCommand();
-    const hermesProcess = childProcess.spawn(hermesCommand, hermesArgs);
-    out.text(`Running: ${hermesCommand} ${hermesArgs.join(' ')}`);
-    let logFile: fs.WriteStream | null = null;
-    let isWarned = false;
-    if (hermesLogs) {
-        logFile = fs.createWriteStream('output.log', { flags: 'a' });
-    }
-    return new Promise<void>((resolve, reject) => {
-        hermesProcess.stdout.on('data', (data: Buffer) => {
-            out.text(data.toString().trim());
-        });
-
-        hermesProcess.stderr.on('data', (data: Buffer) => {
-            if (isWarned) {
-                if (hermesLogs && logFile) {
-                    logFile.write(data.toString().trim());
-                }
-                return;
-            }
-            isWarned = true;
-            out.text(
-                chalk.yellow(
-                    '⚠️ Hermes command executed successfully with some warnings. If you need full logs, use the --hermes-logs command.\n'
-                )
-            );
-        });
-
-        hermesProcess.on('close', (exitCode: number, signal: string) => {
-            if (hermesLogs && logFile) {
-                out.text(chalk.yellow('📕 Done writing logs in output.log file.\n'));
-                logFile.end();
-            }
-
-            if (exitCode !== 0) {
-                reject(new Error(`"❌ hermes" command failed (exitCode=${exitCode}, signal=${signal}).\n`));
-            }
-
-            // Copy HBC bundle to overwrite JS bundle
-            const source = path.join(outputFolder, bundleName + '.hbc');
-            const destination = path.join(outputFolder, bundleName);
-            fs.copyFile(source, destination, (err) => {
-                if (err) {
-                    console.error(err);
-                    reject(
-                        new Error(`Copying file ${source} to ${destination} failed. "hermes" previously exited with code ${exitCode}.`)
-                    );
-                }
-                fs.unlink(source, (err) => {
-                    if (err) {
-                        console.error(err);
-                        reject(err);
-                    }
-                    resolve(null as void);
-                });
-            });
-        });
+  logger.info("Converting JS bundle to byte code via Hermes");
+  const hermesCommand = await getHermesCommand();
+  const hermesProcess = childProcess.spawn(hermesCommand, hermesArgs);
+  logger.info(`Running: ${hermesCommand} ${hermesArgs.join(" ")}`);
+  let logFile: fs.WriteStream | null = null;
+  let isWarned = false;
+  if (hermesLogs) {
+    logFile = fs.createWriteStream("output.log", { flags: "a" });
+  }
+  return new Promise<void>((resolve, reject) => {
+    hermesProcess.stdout.on("data", (data: Buffer) => {
+      logger.info(data.toString().trim());
     });
+
+    hermesProcess.stderr.on("data", (data: Buffer) => {
+      if (isWarned) {
+        if (hermesLogs && logFile) {
+          logFile.write(data.toString().trim());
+        }
+        return;
+      }
+      isWarned = true;
+      logger.warning(
+        "⚠️ Hermes command executed successfully with some warnings. If you need full logs, use the --hermes-logs command.\n"
+      );
+    });
+
+    hermesProcess.on("close", (exitCode: number, signal: string) => {
+      if (hermesLogs && logFile) {
+        logger.success("📕 Done writing logs in output.log file.");
+        logFile.end();
+      }
+
+      if (exitCode !== 0) {
+        reject(
+          new Error(
+            `\"❌ hermes\" command failed (exitCode=${exitCode}, signal=${signal}).\n`
+          )
+        );
+      }
+
+      const source = path.join(outputFolder, bundleName + ".hbc");
+      const destination = path.join(outputFolder, bundleName);
+      fs.copyFile(source, destination, (err) => {
+        if (err) {
+          console.error(err);
+          reject(
+            new Error(
+              `Copying file ${source} to ${destination} failed. \"hermes\" previously exited with code ${exitCode}.`
+            )
+          );
+        }
+        fs.unlink(source, (err) => {
+          if (err) {
+            console.error(err);
+            reject(err);
+          }
+          resolve();
+        });
+      });
+    });
+  });
 }
 
 function getHermesOSBin(): string {
-    switch (process.platform) {
-        case 'win32':
-            return 'win64-bin';
-        case 'darwin':
-            return 'osx-bin';
-        case 'freebsd':
-        case 'linux':
-        case 'sunos':
-        default:
-            return 'linux64-bin';
-    }
+  switch (process.platform) {
+    case "win32":
+      return "win64-bin";
+    case "darwin":
+      return "osx-bin";
+    case "freebsd":
+    case "linux":
+    case "sunos":
+    default:
+      return "linux64-bin";
+  }
 }
 
 function getHermesOSExe(): string {
-    const react63orAbove = compare(coerce(getReactNativeVersion()).version, '0.63.0') !== -1;
-    const hermesExecutableName = react63orAbove ? 'hermesc' : 'hermes';
-    switch (process.platform) {
-        case 'win32':
-            return hermesExecutableName + '.exe';
-        default:
-            return hermesExecutableName;
-    }
+  const versionObj = coerce(getReactNativeVersion());
+  if (!versionObj?.version) {
+    throw new Error("Unable to determine React Native version");
+  }
+  const react63orAbove = compare(versionObj.version, "0.63.0") !== -1;
+  const hermesExecutableName = react63orAbove ? "hermesc" : "hermes";
+  switch (process.platform) {
+    case "win32":
+      return hermesExecutableName + ".exe";
+    default:
+      return hermesExecutableName;
+  }
 }
 
 export function fileExists(filePath: string): boolean {
-    try {
-        return fs.statSync(filePath).isFile();
-    } catch (e) {
-        return false;
-    }
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch (e) {
+    return false;
+  }
 }
 
 async function getHermesCommand(): Promise<string> {
-    // Hermes is bundled with react-native since 0.69
-    const bundledHermesEngine = path.join(getReactNativePackagePath(), 'sdks', 'hermesc', getHermesOSBin(), getHermesOSExe());
-    if (fileExists(bundledHermesEngine)) {
-        return bundledHermesEngine;
-    }
+  const bundledHermesEngine = path.join(
+    getReactNativePackagePath(),
+    "sdks",
+    "hermesc",
+    getHermesOSBin(),
+    getHermesOSExe()
+  );
+  if (fileExists(bundledHermesEngine)) {
+    return bundledHermesEngine;
+  }
 
-    const hermesEngine = path.join('node_modules', 'hermes-engine', getHermesOSBin(), getHermesOSExe());
-    if (fileExists(hermesEngine)) {
-        return hermesEngine;
-    }
-    return path.join('node_modules', 'hermesvm', getHermesOSBin(), 'hermes');
+  const hermesEngine = path.join(
+    "node_modules",
+    "hermes-engine",
+    getHermesOSBin(),
+    getHermesOSExe()
+  );
+  if (fileExists(hermesEngine)) {
+    return hermesEngine;
+  }
+  return path.join("node_modules", "hermesvm", getHermesOSBin(), "hermes");
 }

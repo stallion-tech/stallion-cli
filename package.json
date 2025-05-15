@@ -1,110 +1,92 @@
 {
-    "name": "stallion-cli",
-    "version": "1.0.1",
-    "description": "cli for managing stallion deployments",
-    "main": "dist/index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "rimraf ./dist && tsc",
-        "prep-release": "node scripts/prep-release.js",
-        "pre-release-patch": "npm version prerelease --preid=alpha -f",
-        "prepare-release": "npm run build && npm run prep-release"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/stallion-tech/stallion-cli.git"
-    },
-    "homepage": "https://stalliontech.io/",
-    "author": "Sherlock <sherlock@redhorse.tech>",
-    "license": "MIT",
-    "keywords": [
-        "react-native",
-        "react native",
-        "stallion",
-        "deployments",
-        "testing",
-        "cli"
+  "name": "stallion-cli",
+  "version": "3.0.0",
+  "description": "A powerful CLI tool for managing your Stallion deployments",
+  "main": "index.js",
+  "bin": {
+    "stallion": "index.js"
+  },
+  "scripts": {
+    "start": "ts-node -r tsconfig-paths/register src/index.ts",
+    "build": "rimraf ./dist && tsc && tsc-alias",
+    "prep-release": "node scripts/prep-release.js",
+    "pre-release-patch": "npm version prerelease --preid=alpha -f",
+    "prepare-release": "npm run build && npm run prep-release",
+    "prepare-release-dev": "pnpm run build && cross-env NODE_ENV=development pnpm run prep-release"
+  },
+  "keywords": [
+    "cli",
+    "stallion",
+    "typescript",
+    "commander"
+  ],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "axios": "^1.9.0",
+    "chalk": "^4.1.2",
+    "commander": "^13.1.0",
+    "figlet": "^1.7.0",
+    "gradient-string": "^2.0.2",
+    "inquirer": "^12.6.1",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "mime": "^3.0.0",
+    "opener": "^1.5.2",
+    "ora": "^5.4.1",
+    "reflect-metadata": "^0.2.2",
+    "rimraf": "^6.0.1",
+    "semver": "^7.7.2"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/git": "^10.0.0",
+    "@types/archiver": "^6.0.3",
+    "@types/chalk": "^2.2.4",
+    "@types/figlet": "^1.5.8",
+    "@types/gradient-string": "^1.1.6",
+    "@types/inquirer": "^9.0.8",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^22.15.17",
+    "@types/opener": "^1.4.3",
+    "@types/semver": "^7.7.0",
+    "cross-env": "^7.0.3",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.8",
+    "tsconfig-paths": "^4.2.0",
+    "semantic-release": "19.0.3",
+    "typescript": "^5.8.3"
+  },
+  "release": {
+    "branches": [
+      "main"
     ],
-    "bin": {
-        "stallion": "./bin/stallion.js"
-    },
-    "devDependencies": {
-        "@semantic-release/changelog": "^6.0.0",
-        "@semantic-release/git": "^10.0.0",
-        "@types/archiver": "^5.3.2",
-        "@types/figlet": "^1.7.0",
-        "@types/from2": "^2.3.2",
-        "@types/gradient-string": "^1.1.6",
-        "@types/inquirer": "^8.2.0",
-        "@types/jsonwebtoken": "^9.0.9",
-        "@types/lodash": "^4.14.194",
-        "@types/minimist": "^1.2.2",
-        "@types/node": "^20.1.1",
-        "@types/opener": "^1.4.0",
-        "@types/pumpify": "^1.4.1",
-        "@types/rimraf": "3.0.2",
-        "@types/semver": "^7.5.0",
-        "@types/split2": "^4.2.0",
-        "@types/through2": "^2.0.38",
-        "@types/wordwrap": "^1.0.1",
-        "cross-env": "^7.0.3",
-        "prettier": "^2.8.8",
-        "semantic-release": "19.0.3",
-        "ts-node": "^10.9.1",
-        "tsconfig-paths": "^4.2.0",
-        "typescript": "^5.0.4"
-    },
-    "dependencies": {
-        "archiver": "^5.3.1",
-        "axios": "^1.4.0",
-        "chalk": "4.1.2",
-        "cli-spinner": "^0.2.10",
-        "cli-table3": "0.6.2",
-        "figlet": "^1.8.1",
-        "form-data": "^4.0.0",
-        "from2": "^2.3.0",
-        "gradient-string": "^2.0.2",
-        "inquirer": "8.2.0",
-        "jsonwebtoken": "^9.0.2",
-        "lodash": "^4.17.21",
-        "mime": "3.0.0",
-        "minimist": "^1.2.8",
-        "mkdirp": "^3.0.1",
-        "opener": "^1.5.2",
-        "ora": "^5.4.1",
-        "pumpify": "^2.0.1",
-        "rimraf": "3.0.2",
-        "rxjs": "^7.8.1",
-        "semver": "^7.5.1",
-        "split2": "^4.2.0",
-        "through2": "^4.0.2",
-        "wordwrap": "^1.0.0"
-    },
-    "release": {
-        "branches": [
-            "main"
-        ],
-        "plugins": [
-            "@semantic-release/commit-analyzer",
-            "@semantic-release/release-notes-generator",
-            "@semantic-release/changelog",
-            [
-                "@semantic-release/npm",
-                {
-                    "pkgRoot": "stallion-package"
-                }
-            ],
-            "@semantic-release/github",
-            [
-                "@semantic-release/git",
-                {
-                    "assets": [
-                        "CHANGELOG.md",
-                        "package.json"
-                    ],
-                    "message": "chore(release): ${nextRelease.version}"
-                }
-            ]
-        ]
-    }
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      [
+        "@semantic-release/npm",
+        {
+          "pkgRoot": "stallion-package"
+        }
+      ],
+      "@semantic-release/github",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "CHANGELOG.md",
+            "package.json"
+          ],
+          "message": "chore(release): ${nextRelease.version}"
+        }
+      ]
+    ]
+  }
 }
