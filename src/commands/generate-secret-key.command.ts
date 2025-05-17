@@ -12,7 +12,6 @@ import chalk from "chalk";
   description: "Generate Private & Public keys",
   alias: "gsk",
 })
-@ValidateUser()
 export class GenerateSecretKeyCommand extends BaseCommand {
   private contentRootPath: string;
 
