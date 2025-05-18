@@ -8,6 +8,7 @@ import "@/commands/help.command";
 import "@/commands/publish-bundle.command";
 import "@/commands/login.command";
 import "@/commands/logout.command";
+import "@/commands/generate-secret-key.command";
 
 export class CommandRegistry {
   private commands: Map<string, BaseCommand> = new Map();
