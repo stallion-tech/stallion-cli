@@ -201,7 +201,11 @@ export class PublishBundleCommand extends BaseCommand {
       if (!url) {
         throw new Error("Internal Error: invalid signed url");
       }
-      await client.put(url, readFileSync(filePath));
+      await client.put(url, readFileSync(filePath), {
+        headers: {
+          "Content-Type": "application/zip",
+        },
+      });
     } catch (e: any) {
       throw new Error(e.toString());
     }
