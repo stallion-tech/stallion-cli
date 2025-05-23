@@ -25,12 +25,10 @@ function findUpwardReactNativePackageJson(
   return null;
 }
 
-export function getReactNativeVersion(): string {
+export function getReactNativeVersion(): string | null {
   const rnPackageJsonPath = findUpwardReactNativePackageJson();
   if (!rnPackageJsonPath) {
-    throw new Error(
-      `Unable to locate \"react-native/package.json\" from the current directory. Make sure you're inside a React Native project.`
-    );
+    return null;
   }
 
   const rnPackageJson = JSON.parse(fs.readFileSync(rnPackageJsonPath, "utf-8"));
