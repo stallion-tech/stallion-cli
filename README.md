@@ -6,7 +6,6 @@
 
 [![npm Version](https://img.shields.io/npm/v/stallion-cli.svg)](https://www.npmjs.com/package/stallion-cli) [![License](https://img.shields.io/npm/l/stallion-cli)](https://www.npmjs.com/package/stallion-cli)
 
-
 Stallion CLI is a unified tool for deploying react-native bundles to stallion servers.
 
 ## Prerequisites
@@ -27,6 +26,7 @@ npm install --save-dev stallion-cli
 ```
 yarn add -D stallion-cli
 ```
+
 ## Documentation
 
 Document contains installation steps and usage
