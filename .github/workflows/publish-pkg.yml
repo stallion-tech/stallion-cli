@@ -1,4 +1,4 @@
-name: Release
+name: Release CLI Pipeline
 on:
   push:
     branches:
