@@ -1,18 +1,18 @@
 import { Command } from "@/decorators/command.decorator";
-import { ValidateUser } from "@/decorators/validate-user.decorator";
 import { getReactNativeVersion } from "@/utils/react-native-utils";
 import { BaseCommand } from "@command-line/base.command";
 import path from "path";
 import fs from "fs/promises";
 import { generateKeyPairSync } from "crypto";
 import chalk from "chalk";
+import { logger } from "@/utils/logger";
 
 @Command({
-  name: "generate-secret-key",
+  name: "generate-key-pair",
   description: "Generate Private & Public keys",
-  alias: "gsk",
+  alias: "gkp",
 })
-export class GenerateSecretKeyCommand extends BaseCommand {
+export class GenerateKeyPairCommand extends BaseCommand {
   private contentRootPath: string;
 
   constructor() {
@@ -62,8 +62,8 @@ export class GenerateSecretKeyCommand extends BaseCommand {
       console.log(chalk.cyan("📍 Location\n"));
       console.log(`  Public Key : ${chalk.yellow(`${projectDir}/${relativePublicPath}`)}\n`);
       console.log(`  Private Key: ${chalk.yellow(`${projectDir}/${relativePrivatePath}`)}\n`);
-      console.log(chalk.cyan("📆 Created At:"), chalk.white(new Date().toString()), "\n");
-      console.log(chalk.red("🚫 Keep your private key secure. Do NOT share it.\n"));
+      console.log(chalk.cyan("📆 Created At:"), chalk.white(new Date().toString()), "\n\n");
+      console.log(chalk.red("🚫 Keep your private key secure. Do NOT share it.\n\n"));
 
       // Add important notes about key management
       console.log(chalk.bold.yellow('⚠️  IMPORTANT NOTICE – READ CAREFULLY ⚠️\n'));
@@ -89,23 +89,7 @@ export class GenerateSecretKeyCommand extends BaseCommand {
       );
 
       console.log(
-        chalk.yellow('3.') +
-        ' ' +
-        chalk.white('🛠️ If keys are lost:\n') +
-        chalk.white(
-          `   - You must publish your next ${chalk.bold(
-            'Stallion release without bundle signing.'
-          )}\n` +
-          `   - Then, ${chalk.bold(
-            'regenerate and include the new keys'
-          )} in your next ${chalk.bold('Play Store release')}.\n` +
-          `   - After the Play Store update is live with the new keys, you may resume signed Stallion releases as normal.\n`
-        )
-      );
-
-      console.log(
-        chalk.red.bold('\nStallion cannot recover or validate lost keys. ') +
-        chalk.white('Handle them as you would production secrets—securely and irreversibly.\n')
+        chalk.red.bold('\nStallion cannot recover or validate lost keys.\n')
       );
     } catch (error: any) {
       console.log(
