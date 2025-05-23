@@ -1,3 +1,10 @@
+# [2.1.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.0.2...v2.1.0-alpha.1) (2025-05-23)
+
+
+### Features
+
+* refactor CLI and added support for bundle signing ([#27](https://github.com/stallion-tech/stallion-cli/issues/27)) ([f3ffcbd](https://github.com/stallion-tech/stallion-cli/commit/f3ffcbdb3800a9043250f625662c757667f4a8ea))
+
 ## [2.0.2](https://github.com/stallion-tech/stallion-cli/compare/v2.0.1...v2.0.2) (2025-02-11)
 
 
