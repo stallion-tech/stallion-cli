@@ -92,7 +92,7 @@ export function removeReactTmpDir(): void {
 }
 
 function getCliPath(): string {
-  return path.join("node_modules", ".bin", "react-native");
+  return path.join(getReactNativePackagePath(), "cli.js");
 }
 
 export async function runReactNativeBundleCommand(
