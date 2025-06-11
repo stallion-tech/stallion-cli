@@ -1,4 +1,8 @@
-[![stallionBanner](https://assets.stalliontech.io./stallion_logo.png)](https://stalliontech.io/)
+<p align="center">
+  <a href="https://stalliontech.io/">
+    <img src="https://stalliontech.io/logo-purple.png" alt="Stallion Logo" width="180"/>
+  </a>
+</p>
 
 #### [Sign up With Stallion](https://console.stalliontech.io/) to start using
 
@@ -18,20 +22,20 @@ Node.js version 16 is recommended
 ### npm
 
 ```
-npm install --save-dev stallion-cli
+npm install -g stallion-cli
 ```
 
 ### yarn
 
 ```
-yarn add -D stallion-cli
+yarn global add stallion-cli
 ```
 
 ## Documentation
 
 Document contains installation steps and usage
 
-https://docs.stalliontech.io/docs/StallionCli/intro
+https://learn.stalliontech.io/docs/cli/installation
 
 ## Contributing
 
