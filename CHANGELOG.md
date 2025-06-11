@@ -1,3 +1,10 @@
+# [2.1.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2025-06-11)
+
+
+### Features
+
+* windows RN executable Fix ([#28](https://github.com/stallion-tech/stallion-cli/issues/28)) ([65f9760](https://github.com/stallion-tech/stallion-cli/commit/65f9760cebbf0c84fcbfeafac02997bbd671fee3))
+
 # [2.1.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.0.2...v2.1.0-alpha.1) (2025-05-23)
 
 
