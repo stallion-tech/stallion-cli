@@ -1,10 +1,3 @@
-# [2.1.0](https://github.com/stallion-tech/stallion-cli/compare/v2.0.2...v2.1.0) (2025-06-06)
-
-
-### Features
-
-* v2.1.0 - Bundle Signing + Key pair generation + Overall CLI Refactor ([a8aa0ab](https://github.com/stallion-tech/stallion-cli/commit/a8aa0ab3e2dd337137ef16d69f5d44c23e8a6fe7)), closes [#21](https://github.com/stallion-tech/stallion-cli/issues/21) [#26](https://github.com/stallion-tech/stallion-cli/issues/26) [#27](https://github.com/stallion-tech/stallion-cli/issues/27)
-
 # [2.1.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.0.2...v2.1.0-alpha.1) (2025-05-23)
 
 
