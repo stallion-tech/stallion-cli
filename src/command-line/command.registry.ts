@@ -1,7 +1,6 @@
 import { BaseCommand } from "@/command-line/base.command";
 import { requiresValidation } from "@/decorators/validate-user.decorator";
 import { logger } from "@/utils/logger";
-import { progress } from "@/utils/progress";
 
 // Command Imports
 import "@/commands/help.command";
@@ -9,6 +8,7 @@ import "@/commands/publish-bundle.command";
 import "@/commands/login.command";
 import "@/commands/logout.command";
 import "@/commands/generate-key-pair.command";
+import "@/commands/update-release.command";
 
 export class CommandRegistry {
   private commands: Map<string, BaseCommand> = new Map();
