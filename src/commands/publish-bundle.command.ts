@@ -190,24 +190,28 @@ export class PublishBundleCommand extends BaseCommand {
         platform: platform,
         releaseNote: releaseNote,
       };
+      const headers: Record<string, string> = {};
       if (ciToken) {
-        data["ciToken"] = ciToken;
+        headers["x-ci-token"] = ciToken;
       }
-      const { data: signedUrlResp } = await client.post<any>(
-        ENDPOINTS.UPLOAD.GENERATE_SIGNED_URL,
-        data
-      );
+      const endpoint = ciToken
+        ? ENDPOINTS.UPLOAD.GENERATE_SIGNED_URL_WITH_CI_TOKEN
+        : ENDPOINTS.UPLOAD.GENERATE_SIGNED_URL;
+
+      const { data: signedUrlResp } = await client.post<any>(endpoint, data, {
+        headers,
+      });
       const url = signedUrlResp?.url;
       if (!url) {
         throw new Error("Internal Error: invalid signed url");
       }
+
+      headers["Content-Type"] = "application/zip";
       await client.put(url, readFileSync(filePath), {
-        headers: {
-          "Content-Type": "application/zip",
-        },
+        headers,
       });
     } catch (e: any) {
-      throw new Error(e.toString());
+      throw e.toString();
     }
   }
 }
