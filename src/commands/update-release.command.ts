@@ -10,28 +10,13 @@ import { CONFIG } from "@/api/config";
 
 const expectedOptions: CommandOption[] = [
   {
-    name: "org-id",
-    description: "The org id of the app",
-    required: true,
-  },
-  {
     name: "project-id",
-    description: "The project id of the app",
+    description: "Project id of the app",
     required: true,
   },
   {
-    name: "promoted-id",
-    description: "The id of the promoted release",
-    required: true,
-  },
-  {
-    name: "app-version",
-    description: "The target version of the app to update the release to",
-    required: true,
-  },
-  {
-    name: "platform",
-    description: "The platform of the app to update the release to",
+    name: "hash",
+    description: "Hash of the bundle to update the release to",
     required: true,
   },
   {
@@ -51,12 +36,12 @@ const expectedOptions: CommandOption[] = [
   },
   {
     name: "rollout-percent",
-    description: "The rollout percentage of the release",
+    description: "Rollout percentage of the release",
     required: false,
   },
   {
     name: "release-note",
-    description: "The release note of the release to update",
+    description: "Release note of the release to update",
     required: false,
   },
   {
@@ -85,37 +70,32 @@ export class UpdateReleaseCommand extends BaseCommand {
     }
 
     const {
-      orgId,
       projectId,
-      promotedId,
-      appVersion,
+      hash,
       releaseNote,
-      platform,
       isMandatory,
       isPaused,
       isRolledBack,
       rolloutPercent,
+      ciToken,
     } = options;
 
     const data = {
-      orgId,
       projectId,
-      promotedId,
-      appVersion,
+      hash,
       releaseNote,
-      platform,
       isMandatory,
       isPaused,
       isRolledBack,
-      rolloutPercent,
+      rolloutPercent: rolloutPercent ? Number(rolloutPercent) : undefined,
     };
 
     const client = new ApiClient(CONFIG.API.BASE_URL);
 
     try {
       await progress(
-        chalk.cyanBright("Updating release"),
-        this.updateRelease(client, data)
+        chalk.white("Updating release"),
+        this.updateRelease(client, data, ciToken)
       );
       logger.success("Release updated successfully!");
     } catch (error) {
@@ -124,10 +104,15 @@ export class UpdateReleaseCommand extends BaseCommand {
     }
   }
 
-  private async updateRelease(client: ApiClient, data: any) {
+  private async updateRelease(client: ApiClient, data: any, ciToken: string) {
     const { data: updateReleaseResp } = await client.post<any>(
       ENDPOINTS.PROMOTE.UPDATE_RELEASE,
-      data
+      data,
+      {
+        headers: {
+          "x-ci-token": ciToken,
+        },
+      }
     );
     return updateReleaseResp;
   }

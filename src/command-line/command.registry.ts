@@ -8,6 +8,7 @@ import "@/commands/publish-bundle.command";
 import "@/commands/login.command";
 import "@/commands/logout.command";
 import "@/commands/generate-key-pair.command";
+import "@/commands/release-bundle.command";
 import "@/commands/update-release.command";
 
 export class CommandRegistry {

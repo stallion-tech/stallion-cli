@@ -10,60 +10,45 @@ import { CONFIG } from "@/api/config";
 
 const expectedOptions: CommandOption[] = [
   {
-    name: "org-id",
-    description: "The org id of the app",
-    required: true,
-  },
-  {
     name: "project-id",
-    description: "The project id of the app",
+    description: "Project id of the app",
     required: true,
   },
   {
-    name: "bucket-id",
-    description: "The bucket id of the bundle to promote",
-    required: true,
-  },
-  {
-    name: "bundle-id",
-    description: "The bundle id of the bundle to promote",
-    required: true,
-  },
-  {
-    name: "version",
-    description: "The version of the bundle to promote",
+    name: "hash",
+    description: "Hash of the bundle to promote",
     required: true,
   },
   {
     name: "app-version",
-    description: "The target version of the app to promote the bundle to",
+    description: "Target version of the app to promote the bundle to",
     required: true,
   },
   {
     name: "release-note",
-    description: "The release note of the release",
-    required: true,
-  },
-  {
-    name: "platform",
-    description: "The platform of the bundle to promote (android or ios)",
+    description: "Release note of the release",
     required: true,
   },
   {
     name: "ci-token",
-    description: "The CI token generated from the stallion dashboard",
+    description: "CI token generated from the stallion dashboard",
     required: true,
   },
   {
-    name: "meta-output",
-    description: "Log the meta output of the release",
+    name: "is-mandatory",
+    description: "To mark this release as mandatory",
+    required: false,
+  },
+  {
+    name: "is-paused",
+    description: "To mark this release as paused",
     required: false,
   },
 ];
 
 @Command({
   name: "release-bundle",
-  description: "Release a bundle to an app version",
+  description: "Promote a bundle to a target app version",
   alias: "rb",
   options: expectedOptions,
 })
@@ -80,46 +65,43 @@ export class ReleaseBundleCommand extends BaseCommand {
     }
 
     const {
-      orgId,
       projectId,
-      bucketId,
-      bundleId,
-      version,
+      hash,
       appVersion,
       releaseNote,
-      platform,
-      metaOutput,
+      isMandatory,
+      isPaused,
+      ciToken,
     } = options;
 
     const data = {
-      orgId,
       projectId,
-      bucketId,
-      bundleId,
-      version,
+      hash,
       appVersion,
       releaseNote,
-      platform,
+      isMandatory,
+      isPaused,
     };
 
     const client = new ApiClient(CONFIG.API.BASE_URL);
 
-    const releaseBundleResp = await progress(
+    await progress(
       chalk.cyanBright("Releasing bundle"),
-      this.releaseBundle(client, data)
+      this.releaseBundle(client, data, ciToken)
     );
 
     logger.success("Bundle released successfully!");
-    logger.info("For meta output, run the command with --meta-output flag");
-    if (metaOutput) {
-      logger.info(JSON.stringify(releaseBundleResp, null, 2));
-    }
   }
 
-  private async releaseBundle(client: ApiClient, data: any) {
+  private async releaseBundle(client: ApiClient, data: any, ciToken: string) {
     const { data: releaseBundleResp } = await client.post<any>(
       ENDPOINTS.PROMOTE.PROMOTE_BUNDLE,
-      data
+      data,
+      {
+        headers: {
+          "x-ci-token": ciToken,
+        },
+      }
     );
     return releaseBundleResp;
   }
