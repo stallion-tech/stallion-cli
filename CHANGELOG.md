@@ -1,4 +1,12 @@
 # [2.1.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2025-06-11)
+# [2.2.0](https://github.com/stallion-tech/stallion-cli/compare/v2.1.0...v2.2.0) (2025-06-19)
+
+
+### Features
+
+* Alpha Release with windows bundle command fix ([1880d0e](https://github.com/stallion-tech/stallion-cli/commit/1880d0ef8c039a3a0b8710540a80b89667b2292a)), closes [#21](https://github.com/stallion-tech/stallion-cli/issues/21) [#26](https://github.com/stallion-tech/stallion-cli/issues/26) [#27](https://github.com/stallion-tech/stallion-cli/issues/27) [#28](https://github.com/stallion-tech/stallion-cli/issues/28)
+
+# [2.1.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2025-06-11)
 
 
 ### Features
