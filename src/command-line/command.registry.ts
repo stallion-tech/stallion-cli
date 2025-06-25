@@ -34,6 +34,12 @@ export class CommandRegistry {
     }
   }
 
+  private shouldSkipValidationForCIToken(command: BaseCommand, options: Record<string, any>): boolean {
+    const commandName = command.constructor.name;
+    const supportsCIToken = ['PublishBundleCommand', 'ReleaseBundleCommand', 'UpdateReleaseCommand'];
+    return supportsCIToken.includes(commandName) && Boolean(options.ciToken);
+  }
+
   public async executeCommand(
     name: string,
     options: Record<string, any>
@@ -45,7 +51,9 @@ export class CommandRegistry {
       return;
     }
 
-    if (requiresValidation(command.constructor)) {
+    const needsValidation = requiresValidation(command.constructor);
+    const skipForCIToken = this.shouldSkipValidationForCIToken(command, options);
+    if (needsValidation && !skipForCIToken) {
       try {
         logger.info("Validating user");
         await this.validateUser(command);
@@ -53,6 +61,8 @@ export class CommandRegistry {
         logger.info("User validation failed");
         return;
       }
+    } else if (needsValidation && skipForCIToken) {
+      logger.info("CI token provided, skipping user validation");
     }
 
     await command.execute(options);
