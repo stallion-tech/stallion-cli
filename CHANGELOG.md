@@ -1,3 +1,11 @@
+# [2.4.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.3.0...v2.4.0-alpha.1) (2025-06-26)
+
+
+### Features
+
+* refactor CLI and added support for bundle signing ([#27](https://github.com/stallion-tech/stallion-cli/issues/27)) ([f3ffcbd](https://github.com/stallion-tech/stallion-cli/commit/f3ffcbdb3800a9043250f625662c757667f4a8ea))
+* windows RN executable Fix ([#28](https://github.com/stallion-tech/stallion-cli/issues/28)) ([65f9760](https://github.com/stallion-tech/stallion-cli/commit/65f9760cebbf0c84fcbfeafac02997bbd671fee3))
+
 # [2.3.0](https://github.com/stallion-tech/stallion-cli/compare/v2.2.0...v2.3.0) (2025-06-22)
 
 
