@@ -1,4 +1,10 @@
-# [2.1.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2025-06-11)
+# [2.3.0](https://github.com/stallion-tech/stallion-cli/compare/v2.2.0...v2.3.0) (2025-06-22)
+
+
+### Features
+
+* Stallion CI Support ([#30](https://github.com/stallion-tech/stallion-cli/issues/30)) ([f9a0523](https://github.com/stallion-tech/stallion-cli/commit/f9a0523c8082a82e662fe71c46c9c7bc75963cae))
+
 # [2.2.0](https://github.com/stallion-tech/stallion-cli/compare/v2.1.0...v2.2.0) (2025-06-19)
 
 

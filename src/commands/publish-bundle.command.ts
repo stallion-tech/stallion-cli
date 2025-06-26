@@ -145,13 +145,13 @@ export class PublishBundleCommand extends BaseCommand {
       );
     }
     await progress(
-      chalk.cyanBright("Archiving Bundle"),
+      chalk.white("Archiving Bundle"),
       createZip(this.contentRootPath, contentTempRootPath)
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
     const client = new ApiClient(CONFIG.API.BASE_URL);
-    await progress(
-      chalk.cyanBright("Publishing bundle"),
+    const hash = await progress(
+      chalk.white("Publishing bundle"),
       this.uploadBundle(
         client,
         zipPath,
@@ -162,6 +162,7 @@ export class PublishBundleCommand extends BaseCommand {
       )
     );
     logger.success("Success!, Published new version");
+    logger.info(`Published bundle hash: ${hash}`);
   }
 
   private async uploadBundle(
@@ -183,31 +184,38 @@ export class PublishBundleCommand extends BaseCommand {
       if (!hash) {
         throw new Error("Invalid path or not a valid zip file.");
       }
-      const path = uploadPath?.toLowerCase();
       const data: any = {
         hash,
-        uploadPath: path,
+        uploadPath: uploadPath?.toLowerCase(),
         platform: platform,
         releaseNote: releaseNote,
       };
+      const headers: Record<string, string> = {};
       if (ciToken) {
-        data["ciToken"] = ciToken;
+        headers["x-ci-token"] = ciToken;
       }
-      const { data: signedUrlResp } = await client.post<any>(
-        ENDPOINTS.UPLOAD.GENERATE_SIGNED_URL,
-        data
-      );
+      const endpoint = ciToken
+        ? ENDPOINTS.UPLOAD.GENERATE_SIGNED_URL_WITH_CI_TOKEN
+        : ENDPOINTS.UPLOAD.GENERATE_SIGNED_URL;
+
+      const { data: signedUrlResp } = await client.post<any>(endpoint, data, {
+        headers,
+      });
       const url = signedUrlResp?.url;
       if (!url) {
         throw new Error("Internal Error: invalid signed url");
       }
+
+      headers["Content-Type"] = "application/zip";
       await client.put(url, readFileSync(filePath), {
-        headers: {
-          "Content-Type": "application/zip",
-        },
+        headers,
       });
+      return hash;
     } catch (e: any) {
-      throw new Error(e.toString());
+      if (e.toString().includes("SignatureDoesNotMatch")) {
+        throw "Error uploading bundle. Signature does not match.";
+      }
+      throw e;
     }
   }
 }
