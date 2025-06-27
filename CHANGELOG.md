@@ -1,3 +1,10 @@
+## [2.3.1](https://github.com/stallion-tech/stallion-cli/compare/v2.3.0...v2.3.1) (2025-06-27)
+
+
+### Bug Fixes
+
+* skip user validation when CI token is provided ([#33](https://github.com/stallion-tech/stallion-cli/issues/33)) ([901eab9](https://github.com/stallion-tech/stallion-cli/commit/901eab97c08629d4c7aac8ec3e9f7ebba952ff4b))
+
 # [2.3.0](https://github.com/stallion-tech/stallion-cli/compare/v2.2.0...v2.3.0) (2025-06-22)
 
 
