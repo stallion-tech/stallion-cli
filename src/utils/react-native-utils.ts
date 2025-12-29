@@ -5,6 +5,7 @@ import * as rimraf from "rimraf";
 import { logger } from "./logger";
 import * as childProcess from "child_process";
 import { coerce, compare } from "semver";
+import chalk from "chalk";
 
 function findUpwardReactNativePackageJson(
   startDir: string = process.cwd()
@@ -64,6 +65,20 @@ function getReactNativePackagePath(): string {
   return path.join("node_modules", "react-native");
 }
 
+function resolvePackageDirFromCwd(packageName: string): string | null {
+  const result = childProcess.spawnSync("node", [
+    "--print",
+    `require.resolve('${packageName}/package.json')`,
+  ]);
+  if (result.status !== 0) return null;
+
+  const resolved = result.stdout.toString().trim();
+  if (!resolved) return null;
+
+  const packageDir = path.dirname(resolved);
+  return directoryExistsSync(packageDir) ? packageDir : null;
+}
+
 export function isValidPlatform(platform: string): boolean {
   return (
     platform?.toLowerCase() === "android" || platform?.toLowerCase() === "ios"
@@ -100,8 +115,16 @@ export async function runReactNativeBundleCommand(
   entryFile: string,
   outputFolder: string,
   platform: string,
-  devMode: boolean
+  sourcemap: boolean,
+  devMode: boolean,
 ) {
+  // Ensure output subfolders exist. The RN CLI does not reliably create nested
+  // directories for --bundle-output / --sourcemap-output.
+  fs.mkdirSync(path.join(outputFolder, "bundles"), { recursive: true });
+  if (sourcemap) {
+    fs.mkdirSync(path.join(outputFolder, "sourcemaps"), { recursive: true });
+  }
+
   const reactNativeBundleArgs: string[] = [];
   Array.prototype.push.apply(reactNativeBundleArgs, [
     getCliPath(),
@@ -109,13 +132,19 @@ export async function runReactNativeBundleCommand(
     "--dev",
     devMode,
     "--assets-dest",
-    outputFolder,
+    path.join(outputFolder, "bundles", "assets"),
     "--bundle-output",
-    path.join(outputFolder, bundleName),
+    path.join(outputFolder, "bundles", bundleName),
     "--entry-file",
     entryFile,
     "--platform",
     platform,
+    ...(sourcemap
+      ? [
+        "--sourcemap-output",
+        path.join(outputFolder, "sourcemaps", bundleName + ".map"),
+      ]
+      : []),
   ]);
   logger.info(`Running \"react-native bundle\" command`);
   logger.subtitle(reactNativeBundleArgs.join(" "));
@@ -151,19 +180,23 @@ export async function runReactNativeBundleCommand(
 export async function runHermesEmitBinaryCommand(
   bundleName: string,
   outputFolder: string,
-  hermesLogs: boolean = false
+  hermesLogs: boolean = false,
+  hermescPath?: string
 ): Promise<void> {
   const hermesArgs: string[] = [];
   Array.prototype.push.apply(hermesArgs, [
-    "-emit-binary",
-    "-out",
+    "--output-source-map",
+    "--emit-binary",
+    "--out",
     path.join(outputFolder, bundleName + ".hbc"),
-    path.join(outputFolder, bundleName),
+    path.join(outputFolder, "bundles", bundleName),
   ]);
 
-  logger.info("Converting JS bundle to byte code via Hermes");
+  logger.title(chalk.bold.italic.white("\nHermes Command Information\n"));
+  logger.info(chalk.cyan.bold("Converting JS bundle to byte code via Hermes"));
   const hermesCommand = await getHermesCommand();
-  const hermesProcess = childProcess.spawn(hermesCommand, hermesArgs);
+  logger.info(`Hermesc path: ${chalk.yellow(hermescPath || hermesCommand)}`);
+  const hermesProcess = childProcess.spawn(hermescPath || hermesCommand, hermesArgs);
   logger.info(`Running: ${hermesCommand} ${hermesArgs.join(" ")}`);
   let logFile: fs.WriteStream | null = null;
   let isWarned = false;
@@ -203,7 +236,7 @@ export async function runHermesEmitBinaryCommand(
       }
 
       const source = path.join(outputFolder, bundleName + ".hbc");
-      const destination = path.join(outputFolder, bundleName);
+      const destination = path.join(outputFolder, "bundles", bundleName);
       fs.copyFile(source, destination, (err) => {
         if (err) {
           console.error(err);
@@ -263,6 +296,7 @@ export function fileExists(filePath: string): boolean {
 }
 
 async function getHermesCommand(): Promise<string> {
+  // Check if the hermesc is bundled with React Native. Need to check sdk folder for hermes compiler executable
   const bundledHermesEngine = path.join(
     getReactNativePackagePath(),
     "sdks",
@@ -274,14 +308,153 @@ async function getHermesCommand(): Promise<string> {
     return bundledHermesEngine;
   }
 
+  // Check if the hermes-engine is installed. Need to check node_modules folder for hermes-engine executable
+  const hermesEnginePackageDir = resolvePackageDirFromCwd("hermes-engine");
+  if (hermesEnginePackageDir) {
+    const hermesEngine = path.join(
+      hermesEnginePackageDir,
+      getHermesOSBin(),
+      getHermesOSExe(),
+    );
+    if (fileExists(hermesEngine)) {
+      return hermesEngine;
+    }
+  }
+
   const hermesEngine = path.join(
     "node_modules",
     "hermes-engine",
     getHermesOSBin(),
-    getHermesOSExe()
+    getHermesOSExe(),
   );
-  if (fileExists(hermesEngine)) {
-    return hermesEngine;
+  if (fileExists(hermesEngine)) return hermesEngine;
+
+  // Check if the hermes-compiler is installed. Need to check node_modules folder for hermesc executable
+  const hermesCompilerPackageDir = resolvePackageDirFromCwd("hermes-compiler");
+  if (hermesCompilerPackageDir) {
+    const hermesCompiler = path.join(
+      hermesCompilerPackageDir,
+      "hermesc",
+      getHermesOSBin(),
+      getHermesOSExe(),
+    );
+    if (fileExists(hermesCompiler)) {
+      return hermesCompiler;
+    }
   }
+
+  const hermesCompiler = path.join(
+    "node_modules",
+    "hermes-compiler",
+    "hermesc",
+    getHermesOSBin(),
+    getHermesOSExe(),
+  );
+  if (fileExists(hermesCompiler)) return hermesCompiler;
+
+  // Check if the hermesvm is installed. Need to check node_modules folder for hermes executable
+  const hermesVmPackageDir = resolvePackageDirFromCwd("hermesvm");
+  if (hermesVmPackageDir) {
+    return path.join(hermesVmPackageDir, getHermesOSBin(), "hermes");
+  }
+
   return path.join("node_modules", "hermesvm", getHermesOSBin(), "hermes");
+}
+
+export async function runComposeSourcemapCommand(outputFolder: string, bundleName: string) {
+  const sourcemapsDir = path.join(outputFolder, "sourcemaps");
+  const finalMapPath = path.join(sourcemapsDir, `${bundleName}.map`);
+  const packagerMapPath = path.join(sourcemapsDir, `${bundleName}.packager.map`);
+  const hermesMapPath = path.join(outputFolder, `${bundleName}.hbc.map`);
+
+  // The RN script expects the "packager" map, so rename the current map before composing.
+  try {
+    // On some platforms `rename` won't overwrite, so remove any existing destination first.
+    await fs.promises.unlink(packagerMapPath).catch((err: any) => {
+      if (err?.code !== "ENOENT") throw err;
+    });
+    await fs.promises.rename(finalMapPath, packagerMapPath);
+  } catch (err: any) {
+    throw new Error(
+      `Failed to prepare sourcemaps for composition. Unable to rename "${finalMapPath}" -> "${packagerMapPath}": ${err?.message ?? String(err)}`
+    );
+  }
+
+  const composeSourceMapsScript = path.join(
+    getReactNativePackagePath(),
+    "scripts",
+    "compose-source-maps.js"
+  );
+  const composeSourcemapArgs = [
+    composeSourceMapsScript,
+    packagerMapPath,
+    hermesMapPath,
+    "-o",
+    finalMapPath,
+  ];
+
+  // TODO:- Kept it commented
+  // logger.info(
+  //   `Running: ${process.execPath || "node"} ${composeSourcemapArgs
+  //     .map((a) => JSON.stringify(a))
+  //     .join(" ")}`
+  // );
+
+  const cleanupFiles = async () => {
+    const remove = async (filePath: string) => {
+      try {
+        await fs.promises.unlink(filePath);
+      } catch (e: any) {
+        if (e?.code !== "ENOENT") {
+          logger.error(`Error removing file ${filePath}: ${e?.message ?? String(e)}`);
+        }
+      }
+    };
+
+    // await Promise.allSettled([remove(packagerMapPath), remove(hermesMapPath)]);
+  };
+
+  let stderrTail = "";
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const composeSourcemapProcess = childProcess.spawn(
+        process.execPath || "node",
+        composeSourcemapArgs,
+        { windowsHide: true }
+      );
+
+      composeSourcemapProcess.once("error", (error) => {
+        reject(error);
+      });
+
+      composeSourcemapProcess.stdout?.on("data", (data: Buffer) => {
+        const text = data.toString().trim();
+        if (text) logger.info(text);
+      });
+
+      composeSourcemapProcess.stderr?.on("data", (data: Buffer) => {
+        const text = data.toString().trim();
+        if (text) {
+          logger.error(text);
+          // Keep a small tail to include in thrown errors.
+          stderrTail = (stderrTail + "\n" + text).slice(-8_000);
+        }
+      });
+
+      composeSourcemapProcess.once(
+        "close",
+        (exitCode: number | null, signal: NodeJS.Signals | null) => {
+          if (exitCode === 0) return resolve();
+          const details = stderrTail ? `\n${stderrTail}` : "";
+          reject(
+            new Error(
+              `"compose-source-maps" command failed (exitCode=${exitCode}, signal=${signal}).${details}`
+            )
+          );
+        }
+      );
+    });
+  } finally {
+    await cleanupFiles();
+  }
 }

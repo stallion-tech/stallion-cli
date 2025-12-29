@@ -11,6 +11,7 @@ import {
   getReactNativeVersion,
   runReactNativeBundleCommand,
   runHermesEmitBinaryCommand,
+  runComposeSourcemapCommand,
 } from "@/utils/react-native-utils";
 import chalk from "chalk";
 import { progress } from "@/utils/progress";
@@ -20,6 +21,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { CONFIG } from "@/api/config";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { createZip } from "@/utils/archive";
+import { copyDebugId } from "@/utils/copy-debugid";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -62,6 +64,21 @@ const expectedOptions: CommandOption[] = [
     description: "Private key to sign the bundle",
     required: false,
   },
+  {
+    name: "hermesc-path",
+    description: "Path to the hermesc executable",
+    required: false,
+  },
+  {
+    name: "sourcemap",
+    description: "Whether to enable sourcemap generation",
+    required: false,
+  },
+  {
+    name: "keep-artifacts",
+    description: "Whether to keep the artifacts after publishing",
+    required: false,
+  }
 ];
 
 @Command({
@@ -81,6 +98,7 @@ export class PublishBundleCommand extends BaseCommand {
 
   async execute(options: Record<string, any>): Promise<void> {
     logger.info("Starting publish-bundle command");
+
     if (!this.validateOptions(options, expectedOptions)) {
       return;
     }
@@ -88,12 +106,6 @@ export class PublishBundleCommand extends BaseCommand {
     if (!getReactNativeVersion()) {
       throw new Error("No react native project found in current directory");
     }
-
-    const contentTempRootPath = await fs.mkdtemp(
-      path.join(this.contentRootPath, "stallion-temp-")
-    );
-    this.contentRootPath = path.join(contentTempRootPath, "Stallion");
-    await fs.mkdir(this.contentRootPath);
 
     let {
       uploadPath,
@@ -104,7 +116,16 @@ export class PublishBundleCommand extends BaseCommand {
       entryFile,
       hermesLogs,
       privateKey,
+      hermescPath,
+      sourcemap,
+      keepArtifacts,
     } = options;
+
+    const contentTempRootPath = await fs.mkdtemp(
+      path.join(this.contentRootPath, "stallion-temp-")
+    );
+    this.contentRootPath = path.join(contentTempRootPath, "Stallion");
+    await fs.mkdir(this.contentRootPath);
 
     if (!isValidPlatform(platform)) {
       throw new Error(`Platform must be "android" or "ios".`);
@@ -126,6 +147,7 @@ export class PublishBundleCommand extends BaseCommand {
       entryFile,
       this.contentRootPath,
       platform,
+      sourcemap,
       false // dev mode is false
     );
 
@@ -134,19 +156,26 @@ export class PublishBundleCommand extends BaseCommand {
       await runHermesEmitBinaryCommand(
         bundleName,
         this.contentRootPath,
-        hermesLogs
+        hermesLogs,
+        hermescPath
       );
+    }
+
+    if (keepArtifacts) {
+      await runComposeSourcemapCommand(this.contentRootPath, bundleName);
+      copyDebugId(path.join(this.contentRootPath, "sourcemaps", bundleName + ".packager.map"), path.join(this.contentRootPath, "sourcemaps", bundleName + ".map"));
+      await this.keepArtifacts(this.contentRootPath, platform);
     }
 
     if (privateKey) {
       await progress(
         chalk.cyanBright("Signing Bundle"),
-        signBundle(this.contentRootPath, privateKey)
+        signBundle(path.join(this.contentRootPath, "bundles"), privateKey)
       );
     }
     await progress(
       chalk.white("Archiving Bundle"),
-      createZip(this.contentRootPath, contentTempRootPath)
+      createZip(path.join(this.contentRootPath, "bundles"), contentTempRootPath)
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
     const client = new ApiClient(CONFIG.API.BASE_URL);
@@ -218,4 +247,94 @@ export class PublishBundleCommand extends BaseCommand {
       throw e;
     }
   }
+
+  private async keepArtifacts(contentRootPath: string, platform: string) {
+    const artifactsPath = path.join(process.cwd(), "artifacts");
+    await fs.mkdir(artifactsPath, { recursive: true });
+    const bundleName = platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
+
+    // `assets` is a directory (RN bundle output), so `copyFile` will fail. Use a directory-safe copy.
+    await this.copyPathIfExists(
+      path.join(contentRootPath, "bundles", "assets"),
+      path.join(artifactsPath, "assets")
+    );
+
+    await this.copyFileIfExists(
+      path.join(contentRootPath, "bundles", bundleName),
+      path.join(artifactsPath, bundleName)
+    );
+    await this.copyFileIfExists(
+      path.join(contentRootPath, "sourcemaps", bundleName + ".map"),
+      path.join(artifactsPath, bundleName + ".map")
+    );
+    // Hermes map may not exist when Hermes is disabled.
+    await this.copyFileIfExists(
+      path.join(contentRootPath, "sourcemaps", bundleName + ".hbc.map"),
+      path.join(artifactsPath, bundleName + ".hbc.map")
+    );
+  }
+
+  private async copyFileIfExists(src: string, dest: string) {
+    try {
+      await fs.copyFile(src, dest);
+    } catch (e: any) {
+      if (e?.code === "ENOENT") return;
+      throw e;
+    }
+  }
+
+  private async copyPathIfExists(src: string, dest: string) {
+    try {
+      const st = await fs.lstat(src);
+      if (!st.isDirectory()) {
+        await fs.copyFile(src, dest);
+        return;
+      }
+
+      // Prefer `fs.cp` when available (Node >= 16.7). Fallback for older runtimes.
+      const cp = (fs as any).cp as undefined | ((src: string, dest: string, opts: any) => Promise<void>);
+      if (typeof cp === "function") {
+        await cp(src, dest, { recursive: true, force: true });
+        return;
+      }
+
+      await this.copyDirRecursive(src, dest);
+    } catch (e: any) {
+      if (e?.code === "ENOENT") return;
+      throw e;
+    }
+  }
+
+  private async copyDirRecursive(srcDir: string, destDir: string) {
+    await fs.mkdir(destDir, { recursive: true });
+    const entries = await fs.readdir(srcDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = path.join(srcDir, entry.name);
+      const destPath = path.join(destDir, entry.name);
+
+      if (entry.isDirectory()) {
+        await this.copyDirRecursive(srcPath, destPath);
+        continue;
+      }
+
+      if (entry.isSymbolicLink()) {
+        const link = await fs.readlink(srcPath);
+        try {
+          await fs.symlink(link, destPath);
+        } catch (e: any) {
+          // If it already exists, replace it.
+          if (e?.code === "EEXIST") {
+            await fs.rm(destPath, { force: true, recursive: true });
+            await fs.symlink(link, destPath);
+            continue;
+          }
+          throw e;
+        }
+        continue;
+      }
+
+      await fs.copyFile(srcPath, destPath);
+    }
+  }
 }
+
