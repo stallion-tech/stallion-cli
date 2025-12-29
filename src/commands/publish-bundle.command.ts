@@ -161,7 +161,7 @@ export class PublishBundleCommand extends BaseCommand {
       );
     }
 
-    if (keepArtifacts) {
+    if (keepArtifacts || sourcemap) {
       await runComposeSourcemapCommand(this.contentRootPath, bundleName);
       copyDebugId(path.join(this.contentRootPath, "sourcemaps", bundleName + ".packager.map"), path.join(this.contentRootPath, "sourcemaps", bundleName + ".map"));
       await this.keepArtifacts(this.contentRootPath, platform);
