@@ -118,8 +118,8 @@ export async function runReactNativeBundleCommand(
   sourcemap: boolean,
   devMode: boolean,
 ) {
-  // Ensure output subfolders exist. The RN CLI does not reliably create nested
-  // directories for --bundle-output / --sourcemap-output.
+
+  // Ensure output subfolders exist.
   fs.mkdirSync(path.join(outputFolder, "bundles"), { recursive: true });
   if (sourcemap) {
     fs.mkdirSync(path.join(outputFolder, "sourcemaps"), { recursive: true });
@@ -394,25 +394,11 @@ export async function runComposeSourcemapCommand(outputFolder: string, bundleNam
   ];
 
   // TODO:- Kept it commented
-  // logger.info(
-  //   `Running: ${process.execPath || "node"} ${composeSourcemapArgs
-  //     .map((a) => JSON.stringify(a))
-  //     .join(" ")}`
-  // );
-
-  const cleanupFiles = async () => {
-    const remove = async (filePath: string) => {
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (e: any) {
-        if (e?.code !== "ENOENT") {
-          logger.error(`Error removing file ${filePath}: ${e?.message ?? String(e)}`);
-        }
-      }
-    };
-
-    // await Promise.allSettled([remove(packagerMapPath), remove(hermesMapPath)]);
-  };
+  logger.info(
+    `Running: ${process.execPath || "node"} ${composeSourcemapArgs
+      .map((a) => JSON.stringify(a))
+      .join(" ")}`
+  );
 
   let stderrTail = "";
   try {
@@ -454,7 +440,9 @@ export async function runComposeSourcemapCommand(outputFolder: string, bundleNam
         }
       );
     });
-  } finally {
-    await cleanupFiles();
+  } catch (err: any) {
+    throw new Error(
+      `Failed to compose sourcemaps. ${err?.message ?? String(err)}`
+    );
   }
 }
