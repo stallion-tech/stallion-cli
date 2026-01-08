@@ -116,7 +116,7 @@ export async function runReactNativeBundleCommand(
   outputFolder: string,
   platform: string,
   sourcemap: boolean,
-  devMode: boolean,
+  devMode: boolean
 ) {
 
   // Ensure output subfolders exist.
