@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/stallion-tech/stallion-cli/compare/v2.3.1...v2.4.0) (2026-01-09)
+
+
+### Features
+
+* sourcemaps export, hermes path fix ([b563b44](https://github.com/stallion-tech/stallion-cli/commit/b563b445e01cd6ff91ed02113e9c41028322112b))
+
 ## [2.3.1](https://github.com/stallion-tech/stallion-cli/compare/v2.3.0...v2.3.1) (2025-06-27)
 
 
