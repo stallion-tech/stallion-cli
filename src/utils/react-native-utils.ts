@@ -181,11 +181,12 @@ export async function runHermesEmitBinaryCommand(
   bundleName: string,
   outputFolder: string,
   hermesLogs: boolean = false,
-  hermescPath?: string
+  hermescPath?: string,
+  sourcemap: boolean = false
 ): Promise<void> {
   const hermesArgs: string[] = [];
   Array.prototype.push.apply(hermesArgs, [
-    "--output-source-map",
+    ...(sourcemap ? ["--output-source-map"] : []),
     "--emit-binary",
     "--out",
     path.join(outputFolder, bundleName + ".hbc"),

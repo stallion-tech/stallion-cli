@@ -166,7 +166,8 @@ export class PublishBundleCommand extends BaseCommand {
         bundleName,
         this.contentRootPath,
         hermesLogs,
-        hermescPath
+        hermescPath,
+        sourcemap
       );
     }
 
