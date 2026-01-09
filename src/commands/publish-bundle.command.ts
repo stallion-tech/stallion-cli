@@ -20,6 +20,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { CONFIG } from "@/api/config";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { createZip } from "@/utils/archive";
+import { keepArtifacts as saveArtifacts } from "@/utils/copy";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -62,6 +63,21 @@ const expectedOptions: CommandOption[] = [
     description: "Private key to sign the bundle",
     required: false,
   },
+  {
+    name: "hermesc-path",
+    description: "Path to the hermesc executable",
+    required: false,
+  },
+  {
+    name: "sourcemap",
+    description: "Whether to enable sourcemap generation",
+    required: false,
+  },
+  {
+    name: "keep-artifacts",
+    description: "Whether to keep the artifacts after publishing",
+    required: false,
+  }
 ];
 
 @Command({
@@ -81,6 +97,7 @@ export class PublishBundleCommand extends BaseCommand {
 
   async execute(options: Record<string, any>): Promise<void> {
     logger.info("Starting publish-bundle command");
+
     if (!this.validateOptions(options, expectedOptions)) {
       return;
     }
@@ -88,12 +105,6 @@ export class PublishBundleCommand extends BaseCommand {
     if (!getReactNativeVersion()) {
       throw new Error("No react native project found in current directory");
     }
-
-    const contentTempRootPath = await fs.mkdtemp(
-      path.join(this.contentRootPath, "stallion-temp-")
-    );
-    this.contentRootPath = path.join(contentTempRootPath, "Stallion");
-    await fs.mkdir(this.contentRootPath);
 
     let {
       uploadPath,
@@ -104,7 +115,16 @@ export class PublishBundleCommand extends BaseCommand {
       entryFile,
       hermesLogs,
       privateKey,
+      hermescPath,
+      sourcemap,
+      keepArtifacts: keepArtifactsFlag,
     } = options;
+
+    const contentTempRootPath = await fs.mkdtemp(
+      path.join(this.contentRootPath, "stallion-temp-")
+    );
+    this.contentRootPath = path.join(contentTempRootPath, "Stallion");
+    await fs.mkdir(this.contentRootPath);
 
     if (!isValidPlatform(platform)) {
       throw new Error(`Platform must be "android" or "ios".`);
@@ -121,32 +141,50 @@ export class PublishBundleCommand extends BaseCommand {
       }
     }
 
+    if (keepArtifactsFlag) {
+      const artifactsPath = path.join(process.cwd(), "stallion-artifacts");
+      await fs.mkdir(artifactsPath, { recursive: true });
+    }
+
     await runReactNativeBundleCommand(
       bundleName,
       entryFile,
       this.contentRootPath,
       platform,
-      false // dev mode is false
+      sourcemap,
+      false, // dev mode is false
     );
+
+    if (keepArtifactsFlag) {
+      // Snapshot the "normal" artifacts BEFORE Hermes replaces the bundle output.
+      await saveArtifacts(this.contentRootPath, platform, "normal");
+    }
 
     const isHermesDisabled = hermesDisabled;
     if (!isHermesDisabled) {
       await runHermesEmitBinaryCommand(
         bundleName,
         this.contentRootPath,
-        hermesLogs
+        hermesLogs,
+        hermescPath,
+        sourcemap
       );
+    }
+
+    if (keepArtifactsFlag && !isHermesDisabled) {
+      // Snapshot the Hermes artifacts AFTER the Hermes conversion step.
+      await saveArtifacts(this.contentRootPath, platform, "hermes");
     }
 
     if (privateKey) {
       await progress(
         chalk.cyanBright("Signing Bundle"),
-        signBundle(this.contentRootPath, privateKey)
+        signBundle(path.join(this.contentRootPath, "bundles"), privateKey)
       );
     }
     await progress(
       chalk.white("Archiving Bundle"),
-      createZip(this.contentRootPath, contentTempRootPath)
+      createZip(path.join(this.contentRootPath, "bundles"), contentTempRootPath)
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
     const client = new ApiClient(CONFIG.API.BASE_URL);
