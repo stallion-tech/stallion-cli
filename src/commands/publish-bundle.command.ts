@@ -142,7 +142,7 @@ export class PublishBundleCommand extends BaseCommand {
     }
 
     if (keepArtifactsFlag) {
-      const artifactsPath = path.join(process.cwd(), "artifacts");
+      const artifactsPath = path.join(process.cwd(), "stallion-artifacts");
       await fs.mkdir(artifactsPath, { recursive: true });
     }
 

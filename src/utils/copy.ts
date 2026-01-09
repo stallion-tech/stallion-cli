@@ -8,7 +8,7 @@ export async function keepArtifacts(
   platform: string,
   variant: ArtifactVariant = "normal"
 ) {
-  const artifactsRoot = path.join(process.cwd(), "artifacts");
+  const artifactsRoot = path.join(process.cwd(), "stallion-artifacts");
   const artifactsPath = path.join(artifactsRoot, platform, variant);
   await fs.mkdir(artifactsPath, { recursive: true });
 
