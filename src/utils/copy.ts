@@ -15,14 +15,6 @@ export async function keepArtifacts(
   const bundleName =
     platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
 
-  if (variant === "normal") {
-    // `assets` is a directory (RN bundle output), so `copyFile` will fail. Use a directory-safe copy.
-    await copyPathIfExists(
-      path.join(contentRootPath, "bundles", "assets"),
-      path.join(artifactsPath, "assets")
-    );
-  }
-
   // Bundle: for "normal" this is the JS bundle; for "hermes" this is the bytecode bundle (after Hermes replaces it).
   await copyFileIfExists(
     path.join(contentRootPath, "bundles", bundleName),
