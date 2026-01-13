@@ -1,3 +1,10 @@
+## [2.4.1](https://github.com/stallion-tech/stallion-cli/compare/v2.4.0...v2.4.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* fixed Assets Issue ([#38](https://github.com/stallion-tech/stallion-cli/issues/38)) ([ce564a5](https://github.com/stallion-tech/stallion-cli/commit/ce564a5d00cdb151e8a577e012c685649f50ea3b))
+
 # [2.4.0](https://github.com/stallion-tech/stallion-cli/compare/v2.3.1...v2.4.0) (2026-01-09)
 
 
