@@ -132,7 +132,7 @@ export async function runReactNativeBundleCommand(
     "--dev",
     devMode,
     "--assets-dest",
-    path.join(outputFolder, "bundles", "assets"),
+    path.join(outputFolder, "bundles"),
     "--bundle-output",
     path.join(outputFolder, "bundles", bundleName),
     "--entry-file",
