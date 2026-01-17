@@ -28,7 +28,7 @@ export class ApiClient {
   async post<T>(
     url: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<T> {
     try {
       const response = await this.client.post<T>(url, data, config);
@@ -42,10 +42,34 @@ export class ApiClient {
   async put<T>(
     url: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<T> {
     try {
       const response = await this.client.put<T>(url, data, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // PUT request with upload progress
+  async putWithProgress<T>(
+    url: string,
+    data?: any,
+    onUploadProgress?: (percentage: number) => void,
+    config?: AxiosRequestConfig,
+  ): Promise<T> {
+    try {
+      const response = await this.client.put<T>(url, data, {
+        ...config,
+        onUploadProgress: (progressEvent) => {
+          if (onUploadProgress && progressEvent.total) {
+            const percentage =
+              (progressEvent.loaded * 100) / progressEvent.total;
+            onUploadProgress(percentage);
+          }
+        },
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -66,7 +90,7 @@ export class ApiClient {
   async patch<T>(
     url: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<T> {
     try {
       const response = await this.client.patch<T>(url, data, config);
@@ -83,8 +107,8 @@ export class ApiClient {
         return new Error(
           error?.response?.data?.errors?.data?.[0]?.message ||
             `API Error: ${axiosError.response.status} - ${JSON.stringify(
-              axiosError.response.data
-            )}`
+              axiosError.response.data,
+            )}`,
         );
       }
       return new Error(`API Error: ${axiosError.message}`);

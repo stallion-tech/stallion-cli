@@ -14,7 +14,7 @@ export abstract class BaseCommand {
 
   protected validateOptions(
     options: Record<string, any>,
-    expected: CommandOption[] = []
+    expected: CommandOption[] = [],
   ): boolean {
     const missing = expected
       .filter((opt) => {
@@ -33,7 +33,7 @@ export abstract class BaseCommand {
   async login(): Promise<boolean> {
     try {
       logger.info(
-        `Opening your browser...${os.EOL}• Visit ${ENDPOINTS.CLI_LOGIN} and enter the code:`
+        `Opening your browser...${os.EOL}• Visit ${ENDPOINTS.CLI_LOGIN} and enter the code:`,
       );
 
       opener(ENDPOINTS.CLI_LOGIN);
@@ -51,7 +51,7 @@ export abstract class BaseCommand {
         id: null,
         token: token.trim(),
       });
-      await progress("Verifying login", this.verifyLogin());
+      await progress("Verifying login", () => this.verifyLogin());
 
       logger.success("Token saved successfully. Login successful.");
       return true;

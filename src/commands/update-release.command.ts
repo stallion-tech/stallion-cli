@@ -93,9 +93,8 @@ export class UpdateReleaseCommand extends BaseCommand {
     const client = new ApiClient(CONFIG.API.BASE_URL);
 
     try {
-      await progress(
-        chalk.white("Updating release"),
-        this.updateRelease(client, data, ciToken)
+      await progress(chalk.white("Updating release"), () =>
+        this.updateRelease(client, data, ciToken),
       );
       logger.success("Release updated successfully!");
     } catch (error) {
@@ -112,7 +111,7 @@ export class UpdateReleaseCommand extends BaseCommand {
         headers: {
           "x-ci-token": ciToken,
         },
-      }
+      },
     );
     return updateReleaseResp;
   }
