@@ -39,8 +39,13 @@ async function prepRelease() {
     rimraf.sync(distPath);
     // npm pack in rootPath
     if (process.env.NODE_ENV === "development") {
-      console.log("Linking globally...");
-      exec(`cd ${rootPath} && pnpm link --global`);
+      console.log(chalk.cyan(`Linking ${rootPath} globally...`));
+      try {
+        exec(`pnpm link --global`, { cwd: rootPath, stdio: 'inherit' });
+        console.log(chalk.green("Global link created successfully."));
+      } catch (linkError) {
+        console.error(`${chalk.bold.red("Linking failed:")} ${linkError.message}`);
+      }
     }
     console.log(chalk.bold.green("Success"));
   } catch (e) {
