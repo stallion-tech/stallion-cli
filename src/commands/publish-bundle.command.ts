@@ -4,7 +4,6 @@ import { ValidateUser } from "@decorators/validate-user.decorator";
 import { logger } from "@utils/logger";
 import path from "path";
 import fs from "fs/promises";
-import { readFileSync } from "fs";
 import {
   isValidPlatform,
   fileDoesNotExistOrIsDirectory,
@@ -188,6 +187,9 @@ export class PublishBundleCommand extends BaseCommand {
       ),
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
+    const stats = await fs.stat(zipPath);
+    logger.info(`Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
     const client = new ApiClient(CONFIG.API.BASE_URL);
     const hash = await progress(
       chalk.white("Publishing bundle"),
@@ -248,10 +250,7 @@ export class PublishBundleCommand extends BaseCommand {
         throw new Error("Internal Error: invalid signed url");
       }
 
-      headers["Content-Type"] = "application/zip";
-      await client.putWithProgress(url, readFileSync(filePath), onProgress, {
-        headers,
-      });
+      await client.putWithProgress(url, filePath, onProgress);
       return hash;
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {
