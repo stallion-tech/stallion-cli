@@ -1,4 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
+import fs from "fs";
+import https from "https";
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -28,7 +30,7 @@ export class ApiClient {
   async post<T>(
     url: string,
     data?: any,
-    config?: AxiosRequestConfig,
+    config?: AxiosRequestConfig
   ): Promise<T> {
     try {
       const response = await this.client.post<T>(url, data, config);
@@ -42,7 +44,7 @@ export class ApiClient {
   async put<T>(
     url: string,
     data?: any,
-    config?: AxiosRequestConfig,
+    config?: AxiosRequestConfig
   ): Promise<T> {
     try {
       const response = await this.client.put<T>(url, data, config);
@@ -52,28 +54,40 @@ export class ApiClient {
     }
   }
 
-  // PUT request with upload progress
-  async putWithProgress<T>(
-    url: string,
-    data?: any,
-    onUploadProgress?: (percentage: number) => void,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
-    try {
-      const response = await this.client.put<T>(url, data, {
-        ...config,
-        onUploadProgress: (progressEvent) => {
-          if (onUploadProgress && progressEvent.total) {
-            const percentage =
-              (progressEvent.loaded * 100) / progressEvent.total;
-            onUploadProgress(percentage);
-          }
-        },
+  // Upload file with progress tracking
+  putWithProgress<T>(url: string, filePath: string, onProgress?: (percentage: number) => void) {
+    const { hostname, pathname, search } = new URL(url);
+    const fileSize = fs.statSync(filePath).size;
+    let uploaded = 0;
+
+    return new Promise<T>((resolve, reject) => {
+      const req = https.request({ hostname, path: pathname + search, method: "PUT" }, (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          const status = res.statusCode || 0;
+          status >= 200 && status < 300
+            ? resolve(body as T)
+            : reject(this.handleError(new Error(`HTTP ${status}: ${body || "Upload failed"}`)));
+        });
       });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+
+      req.setHeader("Content-Type", "application/zip");
+      req.setHeader("Content-Length", fileSize);
+      req.on("error", (err: Error) => reject(this.handleError(err)));
+
+      const stream = fs.createReadStream(filePath);
+      stream.on("data", (chunk) => {
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        // Track progress on network data writes, handle backpressure
+        if (!req.write(buffer, () => onProgress?.((uploaded += buffer.length) / fileSize * 100))) {
+          stream.pause();
+          req.once("drain", () => stream.resume());
+        }
+      });
+      stream.on("end", () => req.end());
+      stream.on("error", (err: Error) => reject(this.handleError(err)));
+    });
   }
 
   // DELETE request
@@ -90,7 +104,7 @@ export class ApiClient {
   async patch<T>(
     url: string,
     data?: any,
-    config?: AxiosRequestConfig,
+    config?: AxiosRequestConfig
   ): Promise<T> {
     try {
       const response = await this.client.patch<T>(url, data, config);
@@ -107,8 +121,8 @@ export class ApiClient {
         return new Error(
           error?.response?.data?.errors?.data?.[0]?.message ||
             `API Error: ${axiosError.response.status} - ${JSON.stringify(
-              axiosError.response.data,
-            )}`,
+              axiosError.response.data
+            )}`
         );
       }
       return new Error(`API Error: ${axiosError.message}`);

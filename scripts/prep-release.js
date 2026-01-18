@@ -41,8 +41,8 @@ async function prepRelease() {
     if (process.env.NODE_ENV === "development") {
       console.log(chalk.cyan(`Linking ${rootPath} globally...`));
       try {
-        exec(`pnpm link --global`, { cwd: rootPath, stdio: 'inherit' });
-        console.log(chalk.green("Global link created successfully."));
+        exec(`cd ${rootPath} && pnpm link --global`);
+        console.log(chalk.bold.green("Global link created successfully."));
       } catch (linkError) {
         console.error(`${chalk.bold.red("Linking failed:")} ${linkError.message}`);
       }
