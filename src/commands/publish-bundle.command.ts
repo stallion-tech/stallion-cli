@@ -76,7 +76,7 @@ const expectedOptions: CommandOption[] = [
     name: "keep-artifacts",
     description: "Whether to keep the artifacts after publishing",
     required: false,
-  },
+  }
 ];
 
 @Command({
@@ -120,7 +120,7 @@ export class PublishBundleCommand extends BaseCommand {
     } = options;
 
     const contentTempRootPath = await fs.mkdtemp(
-      path.join(this.contentRootPath, "stallion-temp-"),
+      path.join(this.contentRootPath, "stallion-temp-")
     );
     this.contentRootPath = path.join(contentTempRootPath, "Stallion");
     await fs.mkdir(this.contentRootPath);
@@ -166,7 +166,7 @@ export class PublishBundleCommand extends BaseCommand {
         this.contentRootPath,
         hermesLogs,
         hermescPath,
-        sourcemap,
+        sourcemap
       );
     }
 
@@ -177,13 +177,13 @@ export class PublishBundleCommand extends BaseCommand {
 
     if (privateKey) {
       await progress(chalk.cyanBright("Signing Bundle"), () =>
-        signBundle(path.join(this.contentRootPath, "bundles"), privateKey),
+        signBundle(path.join(this.contentRootPath, "bundles"), privateKey)
       );
     }
     await progress(chalk.white("Archiving Bundle"), () =>
       createZip(
         path.join(this.contentRootPath, "bundles"),
-        contentTempRootPath,
+        contentTempRootPath
       ),
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
@@ -201,7 +201,7 @@ export class PublishBundleCommand extends BaseCommand {
           platform,
           releaseNote,
           ciToken,
-          updateProgress,
+          updateProgress
         ),
     );
     logger.success("Success!, Published new version");
@@ -250,7 +250,7 @@ export class PublishBundleCommand extends BaseCommand {
         throw new Error("Internal Error: invalid signed url");
       }
 
-      await client.putWithProgress(url, filePath, onProgress);
+      await client.putWithProgress(url, filePath, "application/zip", onProgress);
       return hash;
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {

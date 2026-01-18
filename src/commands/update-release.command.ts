@@ -111,7 +111,7 @@ export class UpdateReleaseCommand extends BaseCommand {
         headers: {
           "x-ci-token": ciToken,
         },
-      },
+      }
     );
     return updateReleaseResp;
   }

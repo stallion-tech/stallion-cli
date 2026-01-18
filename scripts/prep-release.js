@@ -38,6 +38,7 @@ async function prepRelease() {
     // Delete the dist directory
     rimraf.sync(distPath);
     // npm pack in rootPath
+    // Link globally in development mode
     if (process.env.NODE_ENV === "development") {
       console.log(chalk.cyan(`Linking ${rootPath} globally...`));
       try {

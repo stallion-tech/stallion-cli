@@ -55,7 +55,12 @@ export class ApiClient {
   }
 
   // Upload file with progress tracking
-  putWithProgress<T>(url: string, filePath: string, onProgress?: (percentage: number) => void) {
+  putWithProgress<T>(
+    url: string,
+    filePath: string,
+    contentType: string,
+    onProgress?: (percentage: number) => void,
+  ): Promise<T> {
     const { hostname, pathname, search } = new URL(url);
     const fileSize = fs.statSync(filePath).size;
     let uploaded = 0;
@@ -72,7 +77,7 @@ export class ApiClient {
         });
       });
 
-      req.setHeader("Content-Type", "application/zip");
+      req.setHeader("Content-Type", contentType);
       req.setHeader("Content-Length", fileSize);
       req.on("error", (err: Error) => reject(this.handleError(err)));
 

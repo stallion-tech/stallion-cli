@@ -1,6 +1,7 @@
 import * as tty from "tty";
 const ora = require("ora");
 import { noop } from "lodash";
+
 type ProgressUpdater = (percentage: number) => void;
 
 /**
