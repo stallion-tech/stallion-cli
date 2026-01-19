@@ -1,3 +1,10 @@
+## [2.4.2](https://github.com/stallion-tech/stallion-cli/compare/v2.4.1...v2.4.2) (2026-01-19)
+
+
+### Bug Fixes
+
+* download progress ([f5c7802](https://github.com/stallion-tech/stallion-cli/commit/f5c78024f442ae34a67a1c258b5aa30f0f928b48))
+
 ## [2.4.1](https://github.com/stallion-tech/stallion-cli/compare/v2.4.0...v2.4.1) (2026-01-13)
 
 
