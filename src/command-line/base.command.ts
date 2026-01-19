@@ -51,7 +51,7 @@ export abstract class BaseCommand {
         id: null,
         token: token.trim(),
       });
-      await progress("Verifying login", this.verifyLogin());
+      await progress("Verifying login", () => this.verifyLogin());
 
       logger.success("Token saved successfully. Login successful.");
       return true;

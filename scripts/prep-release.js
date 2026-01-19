@@ -38,9 +38,15 @@ async function prepRelease() {
     // Delete the dist directory
     rimraf.sync(distPath);
     // npm pack in rootPath
+    // Link globally in development mode
     if (process.env.NODE_ENV === "development") {
-      console.log("Linking globally...");
-      exec(`cd ${rootPath} && pnpm link --global`);
+      console.log(chalk.cyan(`Linking ${rootPath} globally...`));
+      try {
+        exec(`cd ${rootPath} && pnpm link --global`);
+        console.log(chalk.bold.green("Global link created successfully."));
+      } catch (linkError) {
+        console.error(`${chalk.bold.red("Linking failed:")} ${linkError.message}`);
+      }
     }
     console.log(chalk.bold.green("Success"));
   } catch (e) {

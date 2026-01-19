@@ -4,7 +4,6 @@ import { ValidateUser } from "@decorators/validate-user.decorator";
 import { logger } from "@utils/logger";
 import path from "path";
 import fs from "fs/promises";
-import { readFileSync } from "fs";
 import {
   isValidPlatform,
   fileDoesNotExistOrIsDirectory,
@@ -177,27 +176,33 @@ export class PublishBundleCommand extends BaseCommand {
     }
 
     if (privateKey) {
-      await progress(
-        chalk.cyanBright("Signing Bundle"),
+      await progress(chalk.cyanBright("Signing Bundle"), () =>
         signBundle(path.join(this.contentRootPath, "bundles"), privateKey)
       );
     }
-    await progress(
-      chalk.white("Archiving Bundle"),
-      createZip(path.join(this.contentRootPath, "bundles"), contentTempRootPath)
+    await progress(chalk.white("Archiving Bundle"), () =>
+      createZip(
+        path.join(this.contentRootPath, "bundles"),
+        contentTempRootPath
+      ),
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
+    const stats = await fs.stat(zipPath);
+    logger.info(`Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
     const client = new ApiClient(CONFIG.API.BASE_URL);
     const hash = await progress(
       chalk.white("Publishing bundle"),
-      this.uploadBundle(
-        client,
-        zipPath,
-        uploadPath,
-        platform,
-        releaseNote,
-        ciToken
-      )
+      (updateProgress) =>
+        this.uploadBundle(
+          client,
+          zipPath,
+          uploadPath,
+          platform,
+          releaseNote,
+          ciToken,
+          updateProgress
+        ),
     );
     logger.success("Success!, Published new version");
     logger.info(`Published bundle hash: ${hash}`);
@@ -209,7 +214,8 @@ export class PublishBundleCommand extends BaseCommand {
     uploadPath: string,
     platform: string,
     releaseNote: string,
-    ciToken: string
+    ciToken: string,
+    onProgress: (percentage: number) => void,
   ) {
     const tokenStore = createDefaultTokenStore();
     const tokenData = await tokenStore.get("cli");
@@ -244,10 +250,7 @@ export class PublishBundleCommand extends BaseCommand {
         throw new Error("Internal Error: invalid signed url");
       }
 
-      headers["Content-Type"] = "application/zip";
-      await client.put(url, readFileSync(filePath), {
-        headers,
-      });
+      await client.putWithProgress(url, filePath, "application/zip", onProgress);
       return hash;
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {
