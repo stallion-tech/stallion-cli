@@ -76,6 +76,11 @@ const expectedOptions: CommandOption[] = [
     name: "keep-artifacts",
     description: "Whether to keep the artifacts after publishing",
     required: false,
+  },
+  {
+    name: "expo-bundle-path",
+    description: "The path to the expo bundle to upload",
+    required: false,
   }
 ];
 
@@ -117,6 +122,7 @@ export class PublishBundleCommand extends BaseCommand {
       hermescPath,
       sourcemap,
       keepArtifacts: keepArtifactsFlag,
+      expoBundlePath,
     } = options;
 
     const contentTempRootPath = await fs.mkdtemp(
@@ -129,62 +135,69 @@ export class PublishBundleCommand extends BaseCommand {
       throw new Error(`Platform must be "android" or "ios".`);
     }
 
-    const bundleName =
-      platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
+    // Run RN Command and Hermes Command only when expoBundlePath is not provided
+    if (!expoBundlePath) {
+      const bundleName =
+        platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
 
-    if (!entryFile) {
-      entryFile = "index.js";
-    } else {
-      if (fileDoesNotExistOrIsDirectory(entryFile)) {
-        throw new Error(`Entry file "${entryFile}" does not exist.`);
+      if (!entryFile) {
+        entryFile = "index.js";
+      } else {
+        if (fileDoesNotExistOrIsDirectory(entryFile)) {
+          throw new Error(`Entry file "${entryFile}" does not exist.`);
+        }
+      }
+
+      if (keepArtifactsFlag) {
+        const artifactsPath = path.join(process.cwd(), "stallion-artifacts");
+        await fs.mkdir(artifactsPath, { recursive: true });
+      }
+
+      await runReactNativeBundleCommand(
+        bundleName,
+        entryFile,
+        this.contentRootPath,
+        platform,
+        sourcemap,
+        false, // dev mode is false
+      );
+
+      if (keepArtifactsFlag) {
+        // Snapshot the "normal" artifacts BEFORE Hermes replaces the bundle output.
+        await saveArtifacts(this.contentRootPath, platform, "normal");
+      }
+
+      const isHermesDisabled = hermesDisabled;
+      if (!isHermesDisabled) {
+        await runHermesEmitBinaryCommand(
+          bundleName,
+          this.contentRootPath,
+          hermesLogs,
+          hermescPath,
+          sourcemap
+        );
+      }
+
+      if (keepArtifactsFlag && !isHermesDisabled) {
+        // Snapshot the Hermes artifacts AFTER the Hermes conversion step.
+        await saveArtifacts(this.contentRootPath, platform, "hermes");
       }
     }
 
-    if (keepArtifactsFlag) {
-      const artifactsPath = path.join(process.cwd(), "stallion-artifacts");
-      await fs.mkdir(artifactsPath, { recursive: true });
-    }
-
-    await runReactNativeBundleCommand(
-      bundleName,
-      entryFile,
-      this.contentRootPath,
-      platform,
-      sourcemap,
-      false, // dev mode is false
-    );
-
-    if (keepArtifactsFlag) {
-      // Snapshot the "normal" artifacts BEFORE Hermes replaces the bundle output.
-      await saveArtifacts(this.contentRootPath, platform, "normal");
-    }
-
-    const isHermesDisabled = hermesDisabled;
-    if (!isHermesDisabled) {
-      await runHermesEmitBinaryCommand(
-        bundleName,
-        this.contentRootPath,
-        hermesLogs,
-        hermescPath,
-        sourcemap
-      );
-    }
-
-    if (keepArtifactsFlag && !isHermesDisabled) {
-      // Snapshot the Hermes artifacts AFTER the Hermes conversion step.
-      await saveArtifacts(this.contentRootPath, platform, "hermes");
-    }
-
     if (privateKey) {
-      await progress(chalk.cyanBright("Signing Bundle"), () =>
-        signBundle(path.join(this.contentRootPath, "bundles"), privateKey)
+      await progress(chalk.cyanBright("Signing Bundle"), () => {
+        const bundlePath = expoBundlePath ? expoBundlePath : path.join(this.contentRootPath, "bundles");
+        return signBundle(bundlePath, privateKey)
+      }
       );
     }
-    await progress(chalk.white("Archiving Bundle"), () =>
-      createZip(
-        path.join(this.contentRootPath, "bundles"),
+    await progress(chalk.white("Archiving Bundle"), () => {
+      const bundleInputPath = expoBundlePath ? expoBundlePath : path.join(this.contentRootPath, "bundles");
+      return createZip(
+        bundleInputPath,
         contentTempRootPath
-      ),
+      )
+    }
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
     const stats = await fs.stat(zipPath);
