@@ -78,8 +78,8 @@ const expectedOptions: CommandOption[] = [
     required: false,
   },
   {
-    name: "expo-bundle-path",
-    description: "The path to the expo bundle to upload",
+    name: "custom-bundle-path",
+    description: "The path to the custom bundle to upload",
     required: false,
   }
 ];
@@ -122,7 +122,7 @@ export class PublishBundleCommand extends BaseCommand {
       hermescPath,
       sourcemap,
       keepArtifacts: keepArtifactsFlag,
-      expoBundlePath,
+      customBundlePath,
     } = options;
 
     const contentTempRootPath = await fs.mkdtemp(
@@ -136,7 +136,7 @@ export class PublishBundleCommand extends BaseCommand {
     }
 
     // Run RN Command and Hermes Command only when expoBundlePath is not provided
-    if (!expoBundlePath) {
+    if (!customBundlePath) {
       const bundleName =
         platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
 
@@ -186,13 +186,13 @@ export class PublishBundleCommand extends BaseCommand {
 
     if (privateKey) {
       await progress(chalk.cyanBright("Signing Bundle"), () => {
-        const bundlePath = expoBundlePath ? expoBundlePath : path.join(this.contentRootPath, "bundles");
+        const bundlePath = customBundlePath ? customBundlePath : path.join(this.contentRootPath, "bundles");
         return signBundle(bundlePath, privateKey)
       }
       );
     }
     await progress(chalk.white("Archiving Bundle"), () => {
-      const bundleInputPath = expoBundlePath ? expoBundlePath : path.join(this.contentRootPath, "bundles");
+      const bundleInputPath = customBundlePath ? customBundlePath : path.join(this.contentRootPath, "bundles");
       return createZip(
         bundleInputPath,
         contentTempRootPath
