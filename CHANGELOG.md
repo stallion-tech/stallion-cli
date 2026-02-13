@@ -1,3 +1,10 @@
+## [2.4.3](https://github.com/stallion-tech/stallion-cli/compare/v2.4.2...v2.4.3) (2026-02-13)
+
+
+### Bug Fixes
+
+* added Custom Bundle Path Option ([#40](https://github.com/stallion-tech/stallion-cli/issues/40)) ([d0ece26](https://github.com/stallion-tech/stallion-cli/commit/d0ece2668284eb011379244382aa5159ec6f2e82))
+
 ## [2.4.2](https://github.com/stallion-tech/stallion-cli/compare/v2.4.1...v2.4.2) (2026-01-19)
 
 
