@@ -27,6 +27,37 @@ export abstract class BaseCommand {
       return false;
     }
 
+    // If a command supports custom bundle upload, disallow bundling-related flags.
+    const supportsCustomBundlePath = expected.some(
+      (opt) => opt.name === "custom-bundle-path"
+    );
+    const hasCustomBundlePath =
+      supportsCustomBundlePath && options.customBundlePath !== undefined;
+
+    if (hasCustomBundlePath) {
+      const disallowedWhenCustomBundlePath = [
+        "hermes-disabled",
+        "entry-file",
+        "hermes-logs",
+        "hermesc-path",
+        "sourcemap",
+        "keep-artifacts",
+      ];
+
+      const providedDisallowed = disallowedWhenCustomBundlePath.filter(
+        (name) => options[camelCase(name)] !== undefined
+      );
+
+      if (providedDisallowed.length) {
+        logger.error(
+          `When --custom-bundle-path is provided, these options are not allowed: ${providedDisallowed
+            .map((n) => `--${n}`)
+            .join(", ")}`
+        );
+        return false;
+      }
+    }
+
     return true;
   }
 
