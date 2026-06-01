@@ -6,7 +6,8 @@ import chalk from "chalk";
 import { progress } from "@/utils/progress";
 import { ApiClient } from "@/api/api-client";
 import { ENDPOINTS } from "@/api/endpoints";
-import { CONFIG } from "@/api/config";
+import { getApiBaseUrl } from "@/utils/common";
+import { parseTokenRegion } from "@/utils/region";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -83,7 +84,8 @@ export class ReleaseBundleCommand extends BaseCommand {
       isPaused,
     };
 
-    const client = new ApiClient(CONFIG.API.BASE_URL);
+    const region = parseTokenRegion(ciToken) ?? "ap";
+    const client = new ApiClient(getApiBaseUrl(region));
 
     await progress(
       chalk.cyanBright("Releasing bundle"),

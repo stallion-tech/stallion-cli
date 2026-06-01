@@ -16,10 +16,11 @@ import { progress } from "@/utils/progress";
 import { ApiClient } from "@/api/api-client";
 import { calculateSHA2565Hash, signBundle } from "@/utils/hash-utils";
 import { ENDPOINTS } from "@/api/endpoints";
-import { CONFIG } from "@/api/config";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { createZip } from "@/utils/archive";
 import { keepArtifacts as saveArtifacts } from "@/utils/copy";
+import { getApiBaseUrl } from "@/utils/common";
+import { resolveRegion } from "@/utils/region";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -203,7 +204,19 @@ export class PublishBundleCommand extends BaseCommand {
     const stats = await fs.stat(zipPath);
     logger.info(`Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
-    const client = new ApiClient(CONFIG.API.BASE_URL);
+    const tokenStore = createDefaultTokenStore();
+    const tokenData = await tokenStore.get("cli");
+    const accessToken = tokenData?.accessToken?.token;
+
+    const region = await resolveRegion({
+      uploadPath,
+      ciToken,
+      accessToken,
+    });
+
+    logger.info(`Resolved region: ${region}`);
+    logger.info(`API Base URL: ${getApiBaseUrl(region)}`);
+    const client = new ApiClient(getApiBaseUrl(region));
     const hash = await progress(
       chalk.white("Publishing bundle"),
       (updateProgress) =>

@@ -1,5 +1,5 @@
 export const ENDPOINTS = {
-  CLI_LOGIN: "https://console.stalliontech.io/dashboard/cli/user",
+  CLI_LOGIN: "https://console-staging.starbase.stalliontech.io/dashboard/cli/user",
   USER: {
     VERIFY: "/auth/user-profile",
   },
@@ -10,5 +10,8 @@ export const ENDPOINTS = {
   PROMOTE: {
     PROMOTE_BUNDLE: "/cli/ci/promote",
     UPDATE_RELEASE: "/cli/ci/update-release",
+  },
+  ORG: {
+    GET_ORG_REGION: "/cli/org/get-region",
   },
 } as const;
