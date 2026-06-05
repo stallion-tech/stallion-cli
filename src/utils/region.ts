@@ -18,18 +18,22 @@ export async function resolveRegion(opts: {
   ciToken?: string;
   accessToken?: string;
 }): Promise<string> {
-  if (opts.ciToken) {
-    return parseTokenRegion(opts.ciToken) ?? "ap";
-  }
+  try {
+    if (opts.ciToken) {
+      return parseTokenRegion(opts.ciToken) ?? "ap";
+    }
 
-  const client = new ApiClient(CONFIG.API.BASE_URL);
-  if (opts.accessToken) {
-    client.setToken(opts.accessToken);
-  }
+    const client = new ApiClient(CONFIG.API.BASE_URL);
+    if (opts.accessToken) {
+      client.setToken(opts.accessToken);
+    }
 
-  const { data } = await client.post<{ data: { region: string } }>(
-    ENDPOINTS.ORG.GET_ORG_REGION,
-    { uploadPath: opts.uploadPath }
-  );
-  return data?.region ?? "ap";
+    const { data } = await client.post<{ data: { region: string } }>(
+      ENDPOINTS.ORG.GET_ORG_REGION,
+      { uploadPath: opts.uploadPath }
+    );
+    return data?.region ?? "ap";
+  } catch (error) {
+    throw new Error("Something went wrong");
+  }
 }

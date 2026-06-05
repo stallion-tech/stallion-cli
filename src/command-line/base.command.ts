@@ -23,6 +23,7 @@ export abstract class BaseCommand {
       .map((opt) => `--${opt.name}`);
 
     if (missing.length) {
+      logger.error(`Missing required options: ${missing.join(", ")}`);
       return false;
     }
 
@@ -102,7 +103,6 @@ export abstract class BaseCommand {
       await apiClient.get(ENDPOINTS.USER.VERIFY);
       return true;
     } catch (error: any) {
-      logger.error(`Failed to authenticate. Invalid token. ${error.message}`);
       throw new Error("Failed to authenticate. Invalid token.");
     }
   }
