@@ -214,8 +214,6 @@ export class PublishBundleCommand extends BaseCommand {
       accessToken,
     });
 
-    logger.info(`Resolved region: ${region}`);
-    logger.info(`API Base URL: ${getApiBaseUrl(region)}`);
     const client = new ApiClient(getApiBaseUrl(region));
     const hash = await progress(
       chalk.white("Publishing bundle"),

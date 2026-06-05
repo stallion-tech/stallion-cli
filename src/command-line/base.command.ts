@@ -23,7 +23,6 @@ export abstract class BaseCommand {
       .map((opt) => `--${opt.name}`);
 
     if (missing.length) {
-      logger.error(`Missing required options: ${missing.join(", ")}`);
       return false;
     }
 
