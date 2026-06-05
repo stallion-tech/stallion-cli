@@ -4,7 +4,6 @@ import { ValidateUser } from "@decorators/validate-user.decorator";
 import { logger } from "@utils/logger";
 import path from "path";
 import fs from "fs/promises";
-import { readFileSync } from "fs";
 import {
   isValidPlatform,
   fileDoesNotExistOrIsDirectory,
@@ -20,6 +19,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { CONFIG } from "@/api/config";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { createZip } from "@/utils/archive";
+import { keepArtifacts as saveArtifacts } from "@/utils/copy";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -62,6 +62,26 @@ const expectedOptions: CommandOption[] = [
     description: "Private key to sign the bundle",
     required: false,
   },
+  {
+    name: "hermesc-path",
+    description: "Path to the hermesc executable",
+    required: false,
+  },
+  {
+    name: "sourcemap",
+    description: "Whether to enable sourcemap generation",
+    required: false,
+  },
+  {
+    name: "keep-artifacts",
+    description: "Whether to keep the artifacts after publishing",
+    required: false,
+  },
+  {
+    name: "custom-bundle-path",
+    description: "The path to the custom bundle to upload",
+    required: false,
+  }
 ];
 
 @Command({
@@ -81,6 +101,7 @@ export class PublishBundleCommand extends BaseCommand {
 
   async execute(options: Record<string, any>): Promise<void> {
     logger.info("Starting publish-bundle command");
+
     if (!this.validateOptions(options, expectedOptions)) {
       return;
     }
@@ -88,12 +109,6 @@ export class PublishBundleCommand extends BaseCommand {
     if (!getReactNativeVersion()) {
       throw new Error("No react native project found in current directory");
     }
-
-    const contentTempRootPath = await fs.mkdtemp(
-      path.join(this.contentRootPath, "stallion-temp-")
-    );
-    this.contentRootPath = path.join(contentTempRootPath, "Stallion");
-    await fs.mkdir(this.contentRootPath);
 
     let {
       uploadPath,
@@ -104,62 +119,103 @@ export class PublishBundleCommand extends BaseCommand {
       entryFile,
       hermesLogs,
       privateKey,
+      hermescPath,
+      sourcemap,
+      keepArtifacts: keepArtifactsFlag,
+      customBundlePath,
     } = options;
+
+    const contentTempRootPath = await fs.mkdtemp(
+      path.join(this.contentRootPath, "stallion-temp-")
+    );
+    this.contentRootPath = path.join(contentTempRootPath, "Stallion");
+    await fs.mkdir(this.contentRootPath);
 
     if (!isValidPlatform(platform)) {
       throw new Error(`Platform must be "android" or "ios".`);
     }
 
-    const bundleName =
-      platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
+    // Run RN Command and Hermes Command only when expoBundlePath is not provided
+    if (!customBundlePath) {
+      const bundleName =
+        platform === "ios" ? "main.jsbundle" : `index.android.bundle`;
 
-    if (!entryFile) {
-      entryFile = "index.js";
-    } else {
-      if (fileDoesNotExistOrIsDirectory(entryFile)) {
-        throw new Error(`Entry file "${entryFile}" does not exist.`);
+      if (!entryFile) {
+        entryFile = "index.js";
+      } else {
+        if (fileDoesNotExistOrIsDirectory(entryFile)) {
+          throw new Error(`Entry file "${entryFile}" does not exist.`);
+        }
+      }
+
+      if (keepArtifactsFlag) {
+        const artifactsPath = path.join(process.cwd(), "stallion-artifacts");
+        await fs.mkdir(artifactsPath, { recursive: true });
+      }
+
+      await runReactNativeBundleCommand(
+        bundleName,
+        entryFile,
+        this.contentRootPath,
+        platform,
+        sourcemap,
+        false, // dev mode is false
+      );
+
+      if (keepArtifactsFlag) {
+        // Snapshot the "normal" artifacts BEFORE Hermes replaces the bundle output.
+        await saveArtifacts(this.contentRootPath, platform, "normal");
+      }
+
+      const isHermesDisabled = hermesDisabled;
+      if (!isHermesDisabled) {
+        await runHermesEmitBinaryCommand(
+          bundleName,
+          this.contentRootPath,
+          hermesLogs,
+          hermescPath,
+          sourcemap
+        );
+      }
+
+      if (keepArtifactsFlag && !isHermesDisabled) {
+        // Snapshot the Hermes artifacts AFTER the Hermes conversion step.
+        await saveArtifacts(this.contentRootPath, platform, "hermes");
       }
     }
 
-    await runReactNativeBundleCommand(
-      bundleName,
-      entryFile,
-      this.contentRootPath,
-      platform,
-      false // dev mode is false
-    );
-
-    const isHermesDisabled = hermesDisabled;
-    if (!isHermesDisabled) {
-      await runHermesEmitBinaryCommand(
-        bundleName,
-        this.contentRootPath,
-        hermesLogs
-      );
-    }
-
     if (privateKey) {
-      await progress(
-        chalk.cyanBright("Signing Bundle"),
-        signBundle(this.contentRootPath, privateKey)
+      await progress(chalk.cyanBright("Signing Bundle"), () => {
+        const bundlePath = customBundlePath ? customBundlePath : path.join(this.contentRootPath, "bundles");
+        return signBundle(bundlePath, privateKey)
+      }
       );
     }
-    await progress(
-      chalk.white("Archiving Bundle"),
-      createZip(this.contentRootPath, contentTempRootPath)
+    await progress(chalk.white("Archiving Bundle"), () => {
+      const bundleInputPath = customBundlePath ? customBundlePath : path.join(this.contentRootPath, "bundles");
+      return createZip(
+        bundleInputPath,
+        contentTempRootPath
+      )
+    }
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
+    const stats = await fs.stat(zipPath);
+    logger.info(`Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
     const client = new ApiClient(CONFIG.API.BASE_URL);
     const hash = await progress(
       chalk.white("Publishing bundle"),
-      this.uploadBundle(
-        client,
-        zipPath,
-        uploadPath,
-        platform,
-        releaseNote,
-        ciToken
-      )
+      (updateProgress) =>
+        this.uploadBundle(
+          client,
+          zipPath,
+          uploadPath,
+          platform,
+          releaseNote,
+          ciToken,
+          updateProgress
+        ),
     );
     logger.success("Success!, Published new version");
     logger.info(`Published bundle hash: ${hash}`);
@@ -171,7 +227,8 @@ export class PublishBundleCommand extends BaseCommand {
     uploadPath: string,
     platform: string,
     releaseNote: string,
-    ciToken: string
+    ciToken: string,
+    onProgress: (percentage: number) => void,
   ) {
     const tokenStore = createDefaultTokenStore();
     const tokenData = await tokenStore.get("cli");
@@ -206,10 +263,7 @@ export class PublishBundleCommand extends BaseCommand {
         throw new Error("Internal Error: invalid signed url");
       }
 
-      headers["Content-Type"] = "application/zip";
-      await client.put(url, readFileSync(filePath), {
-        headers,
-      });
+      await client.putWithProgress(url, filePath, "application/zip", onProgress);
       return hash;
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {

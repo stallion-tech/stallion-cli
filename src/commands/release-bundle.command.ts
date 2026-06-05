@@ -87,7 +87,7 @@ export class ReleaseBundleCommand extends BaseCommand {
 
     await progress(
       chalk.cyanBright("Releasing bundle"),
-      this.releaseBundle(client, data, ciToken)
+      () => this.releaseBundle(client, data, ciToken)
     );
 
     logger.success("Bundle released successfully!");

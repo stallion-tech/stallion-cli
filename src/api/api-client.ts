@@ -1,4 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
+import fs from "fs";
+import https from "https";
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -50,6 +52,47 @@ export class ApiClient {
     } catch (error) {
       throw this.handleError(error);
     }
+  }
+
+  // Upload file with progress tracking
+  putWithProgress<T>(
+    url: string,
+    filePath: string,
+    contentType: string,
+    onProgress?: (percentage: number) => void,
+  ): Promise<T> {
+    const { hostname, pathname, search } = new URL(url);
+    const fileSize = fs.statSync(filePath).size;
+    let uploaded = 0;
+
+    return new Promise<T>((resolve, reject) => {
+      const req = https.request({ hostname, path: pathname + search, method: "PUT" }, (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          const status = res.statusCode || 0;
+          status >= 200 && status < 300
+            ? resolve(body as T)
+            : reject(this.handleError(new Error(`HTTP ${status}: ${body || "Upload failed"}`)));
+        });
+      });
+
+      req.setHeader("Content-Type", contentType);
+      req.setHeader("Content-Length", fileSize);
+      req.on("error", (err: Error) => reject(this.handleError(err)));
+
+      const stream = fs.createReadStream(filePath);
+      stream.on("data", (chunk) => {
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        // Track progress on network data writes, handle backpressure
+        if (!req.write(buffer, () => onProgress?.((uploaded += buffer.length) / fileSize * 100))) {
+          stream.pause();
+          req.once("drain", () => stream.resume());
+        }
+      });
+      stream.on("end", () => req.end());
+      stream.on("error", (err: Error) => reject(this.handleError(err)));
+    });
   }
 
   // DELETE request
