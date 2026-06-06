@@ -11,4 +11,7 @@ export const ENDPOINTS = {
     PROMOTE_BUNDLE: "/cli/ci/promote",
     UPDATE_RELEASE: "/cli/ci/update-release",
   },
+  ORG: {
+    GET_ORG_REGION: "/cli/org/get-region",
+  },
 } as const;

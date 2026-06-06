@@ -6,7 +6,8 @@ import chalk from "chalk";
 import { progress } from "@/utils/progress";
 import { ApiClient } from "@/api/api-client";
 import { ENDPOINTS } from "@/api/endpoints";
-import { CONFIG } from "@/api/config";
+import { getApiBaseUrl } from "@/utils/common";
+import { parseTokenRegion } from "@/utils/region";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -90,7 +91,8 @@ export class UpdateReleaseCommand extends BaseCommand {
       rolloutPercent: rolloutPercent ? Number(rolloutPercent) : undefined,
     };
 
-    const client = new ApiClient(CONFIG.API.BASE_URL);
+    const region = parseTokenRegion(ciToken) ?? "ap";
+    const client = new ApiClient(getApiBaseUrl(region));
 
     try {
       await progress(chalk.white("Updating release"), () =>
