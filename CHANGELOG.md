@@ -1,3 +1,16 @@
+# [2.5.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.4.3...v2.5.0-alpha.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* multi region support ([#41](https://github.com/stallion-tech/stallion-cli/issues/41)) ([22bc951](https://github.com/stallion-tech/stallion-cli/commit/22bc951527c60451e8056431f0f80e0054b035b8))
+
+
+### Features
+
+* refactor CLI and added support for bundle signing ([#27](https://github.com/stallion-tech/stallion-cli/issues/27)) ([f3ffcbd](https://github.com/stallion-tech/stallion-cli/commit/f3ffcbdb3800a9043250f625662c757667f4a8ea))
+* windows RN executable Fix ([#28](https://github.com/stallion-tech/stallion-cli/issues/28)) ([65f9760](https://github.com/stallion-tech/stallion-cli/commit/65f9760cebbf0c84fcbfeafac02997bbd671fee3))
+
 ## [2.4.3](https://github.com/stallion-tech/stallion-cli/compare/v2.4.2...v2.4.3) (2026-02-13)
 
 ### Bug Fixes
