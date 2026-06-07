@@ -1,3 +1,10 @@
+# [2.5.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.5.0-alpha.1...v2.5.0-alpha.2) (2026-06-07)
+
+
+### Features
+
+* multi region auto switching support ([#43](https://github.com/stallion-tech/stallion-cli/issues/43)) ([0ab4809](https://github.com/stallion-tech/stallion-cli/commit/0ab4809f62d7ee1dcf49285468d19abef1988056)), closes [#21](https://github.com/stallion-tech/stallion-cli/issues/21) [#26](https://github.com/stallion-tech/stallion-cli/issues/26) [#27](https://github.com/stallion-tech/stallion-cli/issues/27) [#28](https://github.com/stallion-tech/stallion-cli/issues/28) [#41](https://github.com/stallion-tech/stallion-cli/issues/41)
+
 # [2.5.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.4.3...v2.5.0-alpha.1) (2026-06-06)
 
 
