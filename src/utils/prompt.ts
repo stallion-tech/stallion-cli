@@ -1,4 +1,34 @@
-import inquirer from "inquirer";
+import {
+  input,
+  confirm,
+  select,
+  search,
+  checkbox,
+  password,
+  number,
+} from "@inquirer/prompts";
+import chalk from "chalk";
+
+export interface SelectChoice<T> {
+  name: string;
+  value: T;
+  /** Optional dimmed secondary line shown under the highlighted item. */
+  description?: string;
+}
+
+/** Shared look for list/search prompts. */
+const theme = {
+  prefix: chalk.cyan("?"),
+  icon: { cursor: chalk.cyan("❯") },
+  style: {
+    answer: (text: string) => chalk.cyan(text),
+    highlight: (text: string) => chalk.cyan.bold(text),
+    description: (text: string) => chalk.dim(text),
+  },
+} as const;
+
+/** Lists longer than this switch to a type-ahead (filterable) prompt. */
+const SEARCH_THRESHOLD = 8;
 
 /**
  * Prompt for a text input
@@ -7,15 +37,7 @@ export async function promptText(
   message: string,
   defaultValue?: string
 ): Promise<string> {
-  const { answer } = await inquirer.prompt<{ answer: string }>([
-    {
-      type: "input",
-      name: "answer",
-      message,
-      default: defaultValue,
-    },
-  ]);
-  return answer;
+  return input({ message, default: defaultValue, theme });
 }
 
 /**
@@ -25,33 +47,34 @@ export async function promptConfirm(
   message: string,
   defaultValue: boolean = true
 ): Promise<boolean> {
-  const { answer } = await inquirer.prompt<{ answer: boolean }>([
-    {
-      type: "confirm",
-      name: "answer",
-      message,
-      default: defaultValue,
-    },
-  ]);
-  return answer;
+  return confirm({ message, default: defaultValue, theme });
 }
 
 /**
- * Prompt to select a single choice from a list
+ * Prompt to select a single choice from a list. Short lists use arrow-key
+ * selection; long lists (> SEARCH_THRESHOLD) switch to a type-ahead filter so
+ * you can narrow by typing.
  */
 export async function promptSelect<T>(
   message: string,
-  choices: Array<{ name: string; value: T }>
+  choices: Array<SelectChoice<T>>
 ): Promise<T> {
-  const { answer } = await inquirer.prompt<{ answer: T }>([
-    {
-      type: "list",
-      name: "answer",
-      message,
-      choices,
-    },
-  ]);
-  return answer;
+  if (choices.length > SEARCH_THRESHOLD) {
+    return search<T>({
+      message: `${message} ${chalk.dim("(type to filter)")}`,
+      source: (term) => {
+        const t = (term ?? "").toLowerCase();
+        return choices.filter(
+          (c) =>
+            !t ||
+            c.name.toLowerCase().includes(t) ||
+            (c.description ?? "").toLowerCase().includes(t)
+        );
+      },
+      theme,
+    });
+  }
+  return select<T>({ message, choices, pageSize: 12, loop: false, theme });
 }
 
 /**
@@ -59,32 +82,16 @@ export async function promptSelect<T>(
  */
 export async function promptMultiSelect<T>(
   message: string,
-  choices: Array<{ name: string; value: T }>
+  choices: Array<SelectChoice<T>>
 ): Promise<T[]> {
-  const { answer } = await inquirer.prompt<{ answer: T[] }>([
-    {
-      type: "checkbox",
-      name: "answer",
-      message,
-      choices,
-    },
-  ]);
-  return answer;
+  return checkbox<T>({ message, choices, pageSize: 12, loop: false, theme });
 }
 
 /**
  * Prompt for a password
  */
 export async function promptPassword(message: string): Promise<string> {
-  const { answer } = await inquirer.prompt<{ answer: string }>([
-    {
-      type: "password",
-      name: "answer",
-      message,
-      mask: "*",
-    },
-  ]);
-  return answer;
+  return password({ message, mask: "*", theme });
 }
 
 /**
@@ -94,17 +101,6 @@ export async function promptNumber(
   message: string,
   defaultValue?: number
 ): Promise<number> {
-  const { answer } = await inquirer.prompt<{ answer: number }>([
-    {
-      type: "number",
-      name: "answer",
-      message,
-      default: defaultValue,
-      validate: (value) =>
-        typeof value === "number" && !isNaN(value)
-          ? true
-          : "Please enter a valid number",
-    },
-  ]);
-  return answer;
+  const answer = await number({ message, default: defaultValue, theme });
+  return answer ?? 0;
 }

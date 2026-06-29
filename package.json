@@ -1,6 +1,6 @@
 {
   "name": "stallion-cli",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "A powerful CLI tool for managing your Stallion deployments",
   "main": "index.js",
   "bin": {
@@ -24,6 +24,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
     "archiver": "^7.0.1",
     "axios": "^1.9.0",
     "chalk": "^4.1.2",

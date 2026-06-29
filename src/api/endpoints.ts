@@ -1,5 +1,5 @@
 export const ENDPOINTS = {
-  CLI_LOGIN: "https://console.stalliontech.io/dashboard/cli/user",
+  CLI_LOGIN: "http://localhost:3000/dashboard/cli/user",
   USER: {
     VERIFY: "/auth/user-profile",
   },
@@ -13,5 +13,22 @@ export const ENDPOINTS = {
   },
   ORG: {
     GET_ORG_REGION: "/cli/org/get-region",
+    LIST: "/org/list",
+  },
+  PROJECT: {
+    LIST: "/project/list",
+    DETAIL: "/project/detail",
+  },
+  BUCKET: {
+    LIST: "/bucket/list",
+  },
+  BUNDLE: {
+    LIST: "/bundle/list",
+    ADVANCE_LISTING: "/bundle/advance-listing",
+  },
+  PROMOTED: {
+    LISTING: "/promoted/promoted-bundle-listing",
+    LIST_APP_VERSIONS: "/promoted/list-app-versions",
+    DETAIL: "/promoted/promoted-bundle-detail",
   },
 } as const;
