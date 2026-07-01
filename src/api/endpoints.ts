@@ -1,5 +1,5 @@
 export const ENDPOINTS = {
-  CLI_LOGIN: "http://localhost:3000/dashboard/cli/user",
+  CLI_LOGIN: "https://console.stalliontech.io/dashboard/cli/user",
   USER: {
     VERIFY: "/auth/user-profile",
   },
