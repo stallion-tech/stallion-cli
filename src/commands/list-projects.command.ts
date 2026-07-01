@@ -4,8 +4,8 @@ import { ValidateUser } from "@decorators/validate-user.decorator";
 import { progress } from "@/utils/progress";
 import { ENDPOINTS } from "@/api/endpoints";
 import { createUserApiClient, resolveOrgContext } from "@/api/user-client";
-import { printTable } from "@/utils/table";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
+import { getContext } from "@/utils/context-store";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -30,17 +30,28 @@ export class ListProjectsCommand extends BaseCommand {
     );
     const projects = res?.data ?? [];
 
-    if (!json) ui.section("Projects");
-    printTable(
-      projects,
-      [
-        { header: "NAME", value: (p) => p.name },
-        { header: "PROJECT ID", value: (p) => p.id ?? p._id },
-        { header: "ANDROID", value: (p) => Boolean(p.androidEnabled) },
-        { header: "IOS", value: (p) => Boolean(p.iosEnabled) },
-        { header: "PATCH", value: (p) => Boolean(p.isPatchEnabled) },
-      ],
-      { json, indent: ui.INDENT }
+    if (json) {
+      console.log(JSON.stringify(projects, null, 2));
+      return;
+    }
+
+    const ctx = getContext();
+    ui.section("projects");
+    ui.numbered(
+      projects.map((p: any) => {
+        const platforms =
+          [p.androidEnabled ? "android" : null, p.iosEnabled ? "ios" : null]
+            .filter(Boolean)
+            .join("·") || "—";
+        return {
+          label: p.name,
+          meta: platforms,
+          current: ctx.projectId === String(p.id ?? p._id),
+        };
+      }),
+      { indent: ui.INDENT }
     );
+    ui.blank();
+    ui.hint(`  ${projects.length} project${projects.length === 1 ? "" : "s"}`);
   }
 }

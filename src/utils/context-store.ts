@@ -13,6 +13,9 @@ export interface StallionContext {
   region?: string;
   projectId?: string;
   projectName?: string;
+  /** Cached profile of the logged-in user (for the welcome greeting). */
+  userName?: string;
+  userEmail?: string;
 }
 
 function getContextFilePath(): string {

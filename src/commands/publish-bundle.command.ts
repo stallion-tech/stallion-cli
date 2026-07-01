@@ -1,7 +1,7 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { ValidateUser } from "@decorators/validate-user.decorator";
-import { logger } from "@utils/logger";
+import { ui } from "@/ui";
 import path from "path";
 import fs from "fs/promises";
 import {
@@ -21,6 +21,7 @@ import { createZip } from "@/utils/archive";
 import { keepArtifacts as saveArtifacts } from "@/utils/copy";
 import { getApiBaseUrl } from "@/utils/common";
 import { resolveRegion } from "@/utils/region";
+import { silenceStdout } from "@/utils/stdout";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -82,7 +83,13 @@ const expectedOptions: CommandOption[] = [
     name: "custom-bundle-path",
     description: "The path to the custom bundle to upload",
     required: false,
-  }
+  },
+  {
+    name: "json",
+    description:
+      "Print only a JSON result ({version, hash, platform, uploadPath}) on stdout for scripting",
+    required: false,
+  },
 ];
 
 @Command({
@@ -101,7 +108,7 @@ export class PublishBundleCommand extends BaseCommand {
   }
 
   async execute(options: Record<string, any>): Promise<void> {
-    logger.info("Starting publish-bundle command");
+    const json = Boolean(options.json);
 
     if (!this.validateOptions(options, expectedOptions)) {
       return;
@@ -110,6 +117,11 @@ export class PublishBundleCommand extends BaseCommand {
     if (!getReactNativeVersion()) {
       throw new Error("No react native project found in current directory");
     }
+
+    // In JSON mode, route all incidental output (logs, spinners, the RN bundler's
+    // own stdout) to stderr so stdout carries ONLY the final JSON result. Left in
+    // place on error: the failure goes to stderr and stdout stays empty.
+    const restoreStdout = json ? silenceStdout() : undefined;
 
     let {
       uploadPath,
@@ -202,7 +214,7 @@ export class PublishBundleCommand extends BaseCommand {
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
     const stats = await fs.stat(zipPath);
-    logger.info(`Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+    ui.hint(`  Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
     const tokenStore = createDefaultTokenStore();
     const tokenData = await tokenStore.get("cli");
@@ -215,10 +227,15 @@ export class PublishBundleCommand extends BaseCommand {
     });
 
     const client = new ApiClient(getApiBaseUrl(region));
-    const hash = await progress(
+    // One spinner covers the whole publish: upload + waiting for the bundle to
+    // register. Registration is async (S3 event → update-uploaded-data), so we
+    // poll until it's queryable, otherwise a following release-bundle can race
+    // ahead into "bundle not found". Best-effort — it never fails the publish.
+    let registered = true;
+    const { hash, version } = await progress(
       chalk.white("Publishing bundle"),
-      (updateProgress) =>
-        this.uploadBundle(
+      async (updateProgress) => {
+        const result = await this.uploadBundle(
           client,
           zipPath,
           uploadPath,
@@ -226,10 +243,70 @@ export class PublishBundleCommand extends BaseCommand {
           releaseNote,
           ciToken,
           updateProgress
-        ),
+        );
+        if (result.projectId) {
+          registered = await this.waitForBundle(client, {
+            ciToken,
+            projectId: result.projectId,
+            hash: result.hash,
+          });
+        }
+        return result;
+      }
     );
-    logger.success("Success!, Published new version");
-    logger.info(`Published bundle hash: ${hash}`);
+
+    if (!registered) {
+      ui.status.warn(
+        "Bundle is still registering — if release-bundle can't find it yet, retry in a moment."
+      );
+    }
+
+    if (json) {
+      restoreStdout?.();
+      console.log(JSON.stringify({ version, hash, platform, uploadPath }));
+    } else {
+      ui.status.ok(`Published version ${version}`);
+      ui.keyValue([
+        ["Hash", hash],
+        ["Platform", platform],
+        ["Upload Path", uploadPath],
+      ]);
+    }
+  }
+
+  /**
+   * Poll the by-hash endpoint until the just-uploaded bundle is registered.
+   * Best-effort: returns true once confirmed, false if it doesn't register
+   * within the window. Never throws — a slow (or older) backend must not fail a
+   * publish whose upload already succeeded. Uses the CI-token route when a
+   * ci-token was supplied, otherwise the user route (client carries the token).
+   */
+  private async waitForBundle(
+    client: ApiClient,
+    opts: { ciToken?: string; projectId: string; hash: string }
+  ): Promise<boolean> {
+    const { ciToken, projectId, hash } = opts;
+    const endpoint = ciToken
+      ? ENDPOINTS.BUNDLE.CI_BY_HASH
+      : ENDPOINTS.BUNDLE.BY_HASH;
+    const config = ciToken ? { headers: { "x-ci-token": ciToken } } : undefined;
+    const intervalMs = 2000;
+    const deadline = Date.now() + 60_000;
+
+    while (Date.now() < deadline) {
+      try {
+        const res = await client.post<{ data: { exists: boolean } }>(
+          endpoint,
+          { projectId, checksum: hash },
+          config
+        );
+        if (res?.data?.exists) return true;
+      } catch {
+        // Endpoint missing (older backend) or transient — keep trying to the deadline.
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    return false;
   }
 
   private async uploadBundle(
@@ -273,9 +350,19 @@ export class PublishBundleCommand extends BaseCommand {
       if (!url) {
         throw new Error("Internal Error: invalid signed url");
       }
+      // The server returns the version it assigned to this upload + the
+      // project it belongs to (used to poll for registration afterwards).
+      const rawVersion = signedUrlResp?.meta?.version;
+      const version =
+        rawVersion != null && !isNaN(Number(rawVersion))
+          ? Number(rawVersion)
+          : null;
+      const projectId = signedUrlResp?.meta?.projectId
+        ? String(signedUrlResp.meta.projectId)
+        : null;
 
       await client.putWithProgress(url, filePath, "application/zip", onProgress);
-      return hash;
+      return { hash, version, projectId };
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {
         throw "Error uploading bundle. Signature does not match.";

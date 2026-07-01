@@ -2,34 +2,37 @@ import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { ValidateUser } from "@decorators/validate-user.decorator";
 import { progress } from "@/utils/progress";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
 import { ENDPOINTS } from "@/api/endpoints";
 import {
+  createCiApiClient,
   createUserApiClient,
   resolveBucketId,
   resolveOrgContext,
   resolveProjectId,
 } from "@/api/user-client";
-import { Column, printTable } from "@/utils/table";
+import { BoardColumn, printBoard, renderValue } from "@/ui";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
-  { name: "project-id", description: "Project id (prompts if omitted)", required: false },
-  { name: "bucket-id", description: "Bucket id (prompts if omitted)", required: false },
-  { name: "platform", description: "Filter by platform (android|ios); enables paging", required: false },
-  { name: "page-size", description: "Page size when filtering by platform (default 20)", required: false },
-  { name: "page", description: "Page number when filtering by platform (default 1)", required: false },
+  { name: "project-id", description: "Project id (prompts if omitted; required with --ci-token)", required: false },
+  { name: "bucket-id", description: "Bucket id (prompts if omitted; required with --ci-token)", required: false },
+  { name: "platform", description: "Filter by platform (android|ios)", required: false },
+  { name: "ci-token", description: "CI token (non-interactive; requires --project-id and --bucket-id)", required: false },
   { name: "json", description: "Output raw JSON", required: false },
 ];
 
-const bundleColumns: Column[] = [
-  { header: "VERSION", value: (b) => b.version },
-  { header: "PLATFORM", value: (b) => b.platform },
-  { header: "PROMOTED", value: (b) => Boolean(b.isPromoted) },
-  { header: "AUTHOR", value: (b) => b.author?.email ?? b.author?.fullName },
-  { header: "SIZE", value: (b) => b.size },
-  { header: "HASH", value: (b) => b.sha256Checksum },
-  { header: "CREATED", value: (b) => b.createdAt },
+const bundleColumns: BoardColumn[] = [
+  { header: "VERSION", render: (b) => renderValue(b.version) },
+  { header: "PLATFORM", render: (b) => renderValue(b.platform) },
+  { header: "PROMOTED", render: (b) => renderValue(Boolean(b.isPromoted)) },
+  {
+    header: "AUTHOR",
+    render: (b) => renderValue(b.author?.email ?? b.author?.fullName),
+  },
+  { header: "SIZE", render: (b) => renderValue(b.size), align: "right" },
+  { header: "HASH", render: (b) => renderValue(b.sha256Checksum) },
+  { header: "CREATED", render: (b) => renderValue(b.createdAt) },
 ];
 
 @Command({
@@ -42,51 +45,54 @@ const bundleColumns: Column[] = [
 export class ListBundlesCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
     const json = Boolean(options.json);
+    let bundles = await this.fetchBundles(options);
+
+    if (options.platform) {
+      const platform = String(options.platform).toLowerCase();
+      bundles = bundles.filter(
+        (b: any) => String(b.platform).toLowerCase() === platform
+      );
+    }
+
+    if (json) {
+      console.log(JSON.stringify(bundles, null, 2));
+      return;
+    }
+    ui.section(options.platform ? `Bundles · ${options.platform}` : "Bundles");
+    if (!bundles.length) {
+      ui.hint("  No bundles.");
+      return;
+    }
+    printBoard(bundles, bundleColumns, { indent: ui.INDENT, spaced: true });
+  }
+
+  private async fetchBundles(options: Record<string, any>): Promise<any[]> {
+    if (options.ciToken) {
+      if (!options.projectId || !options.bucketId) {
+        throw new Error(
+          "--project-id and --bucket-id are required with --ci-token"
+        );
+      }
+      const client = createCiApiClient(options.ciToken);
+      const res = await progress("Fetching bundles", () =>
+        client.post<{ data: any[] }>(ENDPOINTS.BUNDLE.CI_LIST, {
+          projectId: options.projectId,
+          bucketId: options.bucketId,
+        })
+      );
+      return res?.data ?? [];
+    }
+
     const { orgId, region } = await resolveOrgContext(options.orgId);
     const projectId = await resolveProjectId(orgId, options.projectId);
     const bucketId = await resolveBucketId(region, projectId, options.bucketId);
     const client = await createUserApiClient(region);
-
-    if (options.platform) {
-      const pageSize = options.pageSize ? Number(options.pageSize) : 20;
-      const pageNumber = options.page ? Number(options.page) : 1;
-      const res = await progress("Fetching bundles", () =>
-        client.post<{ data: any }>(ENDPOINTS.BUNDLE.ADVANCE_LISTING, {
-          projectId,
-          bucketId,
-          platform: options.platform,
-          pageSize,
-          pageNumber,
-        })
-      );
-      const payload = res?.data ?? {};
-      if (json) {
-        console.log(JSON.stringify(payload, null, 2));
-        return;
-      }
-      ui.section(`Bundles · ${options.platform}`);
-      printTable(payload.paginatedData ?? [], bundleColumns, {
-        indent: ui.INDENT,
-      });
-      const current = payload.currentPageNumber ?? pageNumber;
-      const total = payload.totalPages;
-      ui.hint(total ? `  Page ${current} of ${total}` : `  Page ${current}`);
-      return;
-    }
-
     const res = await progress("Fetching bundles", () =>
-      client.post<{ data: any }>(ENDPOINTS.BUNDLE.LIST, { projectId, bucketId })
+      client.post<{ data: any[] }>(ENDPOINTS.BUNDLE.LIST, {
+        projectId,
+        bucketId,
+      })
     );
-    const payload = res?.data ?? {};
-    if (json) {
-      console.log(JSON.stringify(payload, null, 2));
-      return;
-    }
-    const bundles = [
-      ...(payload.androidBundles ?? []),
-      ...(payload.iosBundles ?? []),
-    ];
-    ui.section("Bundles");
-    printTable(bundles, bundleColumns, { indent: ui.INDENT });
+    return res?.data ?? [];
   }
 }

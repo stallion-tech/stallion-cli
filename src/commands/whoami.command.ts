@@ -4,8 +4,8 @@ import { ValidateUser } from "@decorators/validate-user.decorator";
 import { progress } from "@/utils/progress";
 import { ENDPOINTS } from "@/api/endpoints";
 import { createUserApiClient, fetchOrgs } from "@/api/user-client";
-import { printTable } from "@/utils/table";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
+import { getContext } from "@/utils/context-store";
 
 const expectedOptions: CommandOption[] = [
   { name: "json", description: "Output raw JSON", required: false },
@@ -34,22 +34,28 @@ export class WhoamiCommand extends BaseCommand {
       return;
     }
 
-    ui.section("User");
-    ui.keyValue([
-      ["Name", profile?.fullName],
-      ["Email", profile?.email],
-      ["Id", profile?._id],
+    const ctx = getContext();
+    ui.pipeline([
+      { status: "done", label: "session", value: "authorized" },
+      { status: "done", label: "user", value: profile?.fullName },
+      { status: "done", label: "email", value: profile?.email },
+      {
+        status: ctx.orgId ? "active" : "pending",
+        label: "context",
+        value:
+          ctx.projectName || ctx.orgName
+            ? `${ctx.projectName ?? "-"} · ${ctx.orgName ?? "-"}`
+            : "not set",
+      },
     ]);
 
-    ui.section("Organizations");
-    printTable(
-      orgs,
-      [
-        { header: "NAME", value: (o) => o.name },
-        { header: "ORG ID", value: (o) => o.orgId },
-        { header: "REGION", value: (o) => o.region },
-        { header: "ACCESS", value: (o) => o.access },
-      ],
+    ui.section("organizations");
+    ui.numbered(
+      orgs.map((o) => ({
+        label: o.name,
+        meta: `${o.region} · ${o.access}`,
+        current: ctx.orgId === o.orgId,
+      })),
       { indent: ui.INDENT }
     );
   }

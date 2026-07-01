@@ -31,7 +31,6 @@
     "commander": "^13.1.0",
     "figlet": "^1.7.0",
     "gradient-string": "^2.0.2",
-    "inquirer": "^12.6.1",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mime": "^3.0.0",
@@ -48,7 +47,6 @@
     "@types/chalk": "^2.2.4",
     "@types/figlet": "^1.5.8",
     "@types/gradient-string": "^1.1.6",
-    "@types/inquirer": "^9.0.8",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/lodash": "^4.17.16",
     "@types/node": "^22.15.17",
@@ -56,11 +54,11 @@
     "@types/semver": "^7.7.0",
     "cross-env": "^7.0.3",
     "prettier": "^3.5.3",
+    "semantic-release": "19.0.3",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
-    "semantic-release": "19.0.3",
     "typescript": "^5.8.3"
   },
   "release": {

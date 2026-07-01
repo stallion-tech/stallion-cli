@@ -1,7 +1,6 @@
 import { BaseCommand } from "@/command-line/base.command";
 import { requiresValidation } from "@/decorators/validate-user.decorator";
-import { logger } from "@/utils/logger";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
 
 // Command Imports
 import "@/commands/help.command";
@@ -55,8 +54,8 @@ export class CommandRegistry {
   ): Promise<void> {
     const command = this.getCommand(name);
     if (!command) {
-      logger.error(`Command not found "${name}"`);
-      logger.info('Use "stallion help" to list all available commands');
+      ui.status.fail(`Command not found "${name}"`);
+      ui.hint('Use "stallion help" to list all available commands');
       return;
     }
 

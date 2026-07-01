@@ -1,24 +1,25 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { ValidateUser } from "@decorators/validate-user.decorator";
-import { logger } from "@utils/logger";
 import { progress } from "@/utils/progress";
 import { promptSelect } from "@/utils/prompt";
 import { ENDPOINTS } from "@/api/endpoints";
 import {
+  createCiApiClient,
   createUserApiClient,
   resolveOrgContext,
   resolvePlatform,
   resolveProjectId,
 } from "@/api/user-client";
-import { printTable } from "@/utils/table";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
+import { bar, glyph, printBoard, renderValue, theme } from "@/ui";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
-  { name: "project-id", description: "Project id (prompts if omitted)", required: false },
+  { name: "project-id", description: "Project id (prompts if omitted; required with --ci-token)", required: false },
   { name: "platform", description: "Platform (android|ios); prompts if omitted", required: false },
-  { name: "app-version", description: "App version; prompts if omitted", required: false },
+  { name: "app-version", description: "App version; prompts if omitted (required with --ci-token)", required: false },
+  { name: "ci-token", description: "CI token (non-interactive; requires --project-id, --platform, --app-version)", required: false },
   { name: "json", description: "Output raw JSON", required: false },
 ];
 
@@ -32,6 +33,76 @@ const expectedOptions: CommandOption[] = [
 export class ListReleasesCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
     const json = Boolean(options.json);
+    const { appVersion, releases } = await this.fetchReleases(options);
+
+    if (json) {
+      console.log(JSON.stringify(releases, null, 2));
+      return;
+    }
+
+    ui.section(`releases · v${appVersion}`);
+    if (!releases.length) {
+      ui.hint("  No releases.");
+      return;
+    }
+
+    printBoard(
+      releases,
+      [
+        {
+          header: "VERSION",
+          render: (r) => {
+            const v = `v${r.bundleVersion ?? "-"}`;
+            return r === releases[0] ? theme.accent(v) : v;
+          },
+        },
+        {
+          header: "ROLLOUT",
+          render: (r) => {
+            const pct = r.isRolledBack ? 0 : 100;
+            return `${bar(pct)} ${String(pct).padStart(3)}%`;
+          },
+        },
+        {
+          header: "STATUS",
+          render: (r) => {
+            if (r.isRolledBack)
+              return `${theme.danger(glyph.cross)} rolled back`;
+            if (r.isPaused) return `${theme.warn(glyph.warn)} paused`;
+            return `${theme.ok(glyph.tick)} live`;
+          },
+        },
+        { header: "RELEASE ID", render: (r) => renderValue(r.id) },
+      ],
+      { indent: ui.INDENT, spaced: true }
+    );
+    ui.blank();
+    ui.hint(
+      `  ${releases.length} release${releases.length === 1 ? "" : "s"} · v${appVersion}`
+    );
+  }
+
+  private async fetchReleases(
+    options: Record<string, any>
+  ): Promise<{ appVersion: string; releases: any[] }> {
+    if (options.ciToken) {
+      const { projectId, platform, appVersion } = options;
+      if (!projectId || !platform || !appVersion) {
+        throw new Error(
+          "--project-id, --platform and --app-version are required with --ci-token"
+        );
+      }
+      const client = createCiApiClient(options.ciToken);
+      const res = await progress("Fetching releases", () =>
+        client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.CI_LISTING, {
+          projectId,
+          platform,
+          appVersion,
+        })
+      );
+      return { appVersion, releases: res?.data ?? [] };
+    }
+
     const { orgId, region } = await resolveOrgContext(options.orgId);
     const projectId = await resolveProjectId(orgId, options.projectId);
     const platform = await resolvePlatform(options.platform);
@@ -47,8 +118,8 @@ export class ListReleasesCommand extends BaseCommand {
       );
       const versions = verRes?.data ?? [];
       if (!versions.length) {
-        logger.info("No app versions found for this platform.");
-        return;
+        ui.hint("No app versions found for this platform.");
+        return { appVersion: "-", releases: [] };
       }
       appVersion = await promptSelect<string>(
         "Select an app version",
@@ -63,27 +134,12 @@ export class ListReleasesCommand extends BaseCommand {
     }
 
     const res = await progress("Fetching releases", () =>
-      client.post<{ data: any }>(ENDPOINTS.PROMOTED.LISTING, {
+      client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.LISTING, {
         projectId,
         platform,
         appVersion,
       })
     );
-    const releases = res?.data?.paginatedData ?? [];
-
-    if (!json) ui.section(`Releases · v${appVersion}`);
-    printTable(
-      releases,
-      [
-        { header: "APP VERSION", value: (r) => r.appVersion },
-        { header: "BUNDLE VERSION", value: (r) => r.bundleVersion },
-        { header: "RELEASE ID", value: (r) => r._id },
-        { header: "AUTHOR", value: (r) => r.user?.email ?? r.user?.fullName },
-        { header: "PAUSED", value: (r) => Boolean(r.isPaused) },
-        { header: "ROLLED BACK", value: (r) => Boolean(r.isRolledBack) },
-        { header: "CREATED", value: (r) => r.createdAt },
-      ],
-      { json, indent: ui.INDENT }
-    );
+    return { appVersion, releases: res?.data ?? [] };
   }
 }

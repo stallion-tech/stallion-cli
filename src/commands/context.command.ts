@@ -1,7 +1,7 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { clearContext, getContext, getContextPath } from "@/utils/context-store";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
 
 const expectedOptions: CommandOption[] = [
   { name: "clear", description: "Clear the saved context", required: false },

@@ -2,7 +2,7 @@ import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { ValidateUser } from "@decorators/validate-user.decorator";
 import { progress } from "@/utils/progress";
-import { ui } from "@/utils/ui";
+import { ui } from "@/ui";
 import { promptSelect } from "@/utils/prompt";
 import { ENDPOINTS } from "@/api/endpoints";
 import { createUserApiClient, fetchOrgs } from "@/api/user-client";

@@ -5,6 +5,19 @@ import { getApiBaseUrl } from "@/utils/common";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { promptSelect } from "@/utils/prompt";
 import { getContext, setContext } from "@/utils/context-store";
+import { parseTokenRegion } from "@/utils/region";
+
+/**
+ * Build an ApiClient authenticated with a CI token (x-ci-token). Region is
+ * derived from the token itself. Used by the non-interactive --ci-token path of
+ * the project-scoped read commands.
+ */
+export function createCiApiClient(ciToken: string): ApiClient {
+  const region = parseTokenRegion(ciToken) ?? "ap";
+  const client = new ApiClient(getApiBaseUrl(region));
+  client.setHeaders({ "x-ci-token": ciToken });
+  return client;
+}
 
 /**
  * Read the stored login JWT, or throw a friendly error if the user is not
@@ -42,14 +55,13 @@ export interface OrgSummary {
   access: string;
 }
 
-/** Fetch the user's organizations (with their region) from the global API. */
+/** Fetch the user's organizations (lean shape) from /cli/list-orgs. */
 export async function fetchOrgs(client: ApiClient): Promise<OrgSummary[]> {
-  const res = await client.get<{ data: any[] }>(ENDPOINTS.ORG.LIST);
-  const orgs = res?.data ?? [];
-  return orgs.map((o: any) => ({
+  const res = await client.get<{ data: OrgSummary[] }>(ENDPOINTS.ORG.LIST);
+  return (res?.data ?? []).map((o) => ({
     orgId: String(o.orgId),
-    name: o.orgData?.[0]?.name ?? "(unknown)",
-    region: o.orgData?.[0]?.region ?? "ap",
+    name: o.name ?? "(unknown)",
+    region: o.region ?? "ap",
     access: o.access ?? "",
   }));
 }

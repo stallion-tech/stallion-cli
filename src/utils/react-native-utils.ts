@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import * as rimraf from "rimraf";
-import { logger } from "./logger";
+import { ui } from "@/ui";
 import * as childProcess from "child_process";
 import { coerce, compare } from "semver";
 import chalk from "chalk";
@@ -146,8 +146,8 @@ export async function runReactNativeBundleCommand(
       ]
       : []),
   ]);
-  logger.info(`Running \"react-native bundle\" command`);
-  logger.subtitle(reactNativeBundleArgs.join(" "));
+  ui.hint(`  Running "react-native bundle"`);
+  ui.hint(`  ${reactNativeBundleArgs.join(" ")}`);
 
   const reactNativeBundleProcess = childProcess.spawn(
     "node",
@@ -160,7 +160,8 @@ export async function runReactNativeBundleCommand(
     });
 
     reactNativeBundleProcess.stderr.on("data", (data: Buffer) => {
-      logger.error(data.toString().trim());
+      // Raw bundler stderr passthrough (kept unformatted).
+      console.error(data.toString().trim());
     });
 
     reactNativeBundleProcess.on("close", (exitCode: number, signal: string) => {
@@ -193,12 +194,12 @@ export async function runHermesEmitBinaryCommand(
     path.join(outputFolder, "bundles", bundleName),
   ]);
 
-  logger.title(chalk.bold.italic.white("\nHermes Command Information\n"));
-  logger.info(chalk.cyan.bold("Converting JS bundle to byte code via Hermes"));
+  ui.section("Hermes");
+  ui.hint("  Converting JS bundle to byte code via Hermes");
   const hermesCommand = await getHermesCommand();
-  logger.info(`Hermesc path: ${chalk.yellow(hermescPath || hermesCommand)}`);
+  ui.hint(`  Hermesc: ${hermescPath || hermesCommand}`);
   const hermesProcess = childProcess.spawn(hermescPath || hermesCommand, hermesArgs);
-  logger.info(`Running: ${hermesCommand} ${hermesArgs.join(" ")}`);
+  ui.hint(`  Running: ${hermesCommand} ${hermesArgs.join(" ")}`);
   let logFile: fs.WriteStream | null = null;
   let isWarned = false;
   if (hermesLogs) {
@@ -206,7 +207,7 @@ export async function runHermesEmitBinaryCommand(
   }
   return new Promise<void>((resolve, reject) => {
     hermesProcess.stdout.on("data", (data: Buffer) => {
-      logger.info(data.toString().trim());
+      console.log(data.toString().trim());
     });
 
     hermesProcess.stderr.on("data", (data: Buffer) => {
@@ -217,14 +218,14 @@ export async function runHermesEmitBinaryCommand(
         return;
       }
       isWarned = true;
-      logger.warning(
-        "⚠️ Hermes command executed successfully with some warnings. If you need full logs, use the --hermes-logs command.\n"
+      ui.status.warn(
+        "Hermes finished with warnings. Use --hermes-logs for the full log."
       );
     });
 
     hermesProcess.on("close", (exitCode: number, signal: string) => {
       if (hermesLogs && logFile) {
-        logger.success("📕 Done writing logs in output.log file.");
+        ui.status.ok("Wrote logs to output.log");
         logFile.end();
       }
 
