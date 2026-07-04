@@ -44,7 +44,15 @@ export class CommandRegistry {
 
   private shouldSkipValidationForCIToken(command: BaseCommand, options: Record<string, any>): boolean {
     const commandName = command.constructor.name;
-    const supportsCIToken = ['PublishBundleCommand', 'ReleaseBundleCommand', 'UpdateReleaseCommand'];
+    const supportsCIToken = [
+      'PublishBundleCommand',
+      'ReleaseBundleCommand',
+      'UpdateReleaseCommand',
+      'ListBucketsCommand',
+      'ListBundlesCommand',
+      'ListReleasesCommand',
+      'ReleaseInfoCommand',
+    ];
     return supportsCIToken.includes(commandName) && Boolean(options.ciToken);
   }
 
