@@ -1,6 +1,6 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
-import { clearContext, getContext, getContextPath } from "@/utils/context-store";
+import { clearContext, getContext } from "@/utils/context-store";
 import { ui } from "@/ui";
 
 const expectedOptions: CommandOption[] = [
@@ -44,6 +44,5 @@ export class ContextCommand extends BaseCommand {
       ["Project", ctx.projectName],
       ["Project Id", ctx.projectId],
     ]);
-    ui.hint(`\nStored at ${getContextPath()}`);
   }
 }

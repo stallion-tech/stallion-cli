@@ -82,11 +82,7 @@ export function showWelcome(): void {
   const cmd = ([name, desc]: [string, string]) =>
     `${theme.accent(glyph.arrow)} ${theme.text.bold(padVisible(name, nameWidth))}${theme.dim(desc)}`;
 
-  const lines = [
-    ...entries.map(cmd),
-    "",
-    `${theme.dim("cwd")}  ${theme.muted(shortCwd())}`,
-  ];
+  const lines = [...entries.map(cmd)];
 
   for (const line of box(lines, { title: "Getting Started", indent: 2, padX: 2 })) {
     console.log(line);
@@ -106,8 +102,3 @@ export function showBanner(): void {
   }
 }
 
-function shortCwd(): string {
-  const cwd = process.cwd();
-  const home = process.env.HOME || process.env.USERPROFILE;
-  return home && cwd.startsWith(home) ? "~" + cwd.slice(home.length) : cwd;
-}
