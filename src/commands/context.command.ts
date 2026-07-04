@@ -23,13 +23,16 @@ export class ContextCommand extends BaseCommand {
     }
 
     const ctx = getContext();
-    if (!ctx.orgId && !ctx.projectId) {
-      ui.status.info('No context set. Run "stallion use" to set one.');
+
+    // JSON mode always emits a parseable object on stdout — including `{}` when
+    // no context is set — so scripts can rely on the output shape.
+    if (options.json) {
+      console.log(JSON.stringify(ctx ?? {}, null, 2));
       return;
     }
 
-    if (options.json) {
-      console.log(JSON.stringify(ctx, null, 2));
+    if (!ctx.orgId && !ctx.projectId) {
+      ui.status.info('No context set. Run "stallion use" to set one.');
       return;
     }
 

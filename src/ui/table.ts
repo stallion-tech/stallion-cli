@@ -1,6 +1,6 @@
 import { glyph, space, theme } from "./theme";
 import { colorizeCell, formatValue, pad } from "./format";
-import { padVisible, visibleLength } from "./ansi";
+import { padVisible, truncateVisible, visibleLength, wrapVisible } from "./ansi";
 
 export interface Column {
   header: string;
@@ -35,6 +35,29 @@ export function printBoard(
     )
   );
 
+  // Responsive: if the natural table is wider than the terminal, shrink the
+  // widest columns (down to a floor) so the frame still fits. Cells wider than
+  // their (reduced) column are ellipsized. Non-TTY (piped) output uses a wide
+  // fallback so redirected/`| less` output isn't needlessly clipped.
+  const n = columns.length;
+  const termWidth = process.stdout.columns || 120;
+  const overhead = (options.indent ?? 0) + (n + 1) + n * 2; // borders + padding
+  const budget = termWidth - overhead;
+  const MIN = 4;
+  const sum = () => widths.reduce((a, b) => a + b, 0);
+  while (sum() > budget) {
+    let idx = -1;
+    let max = MIN;
+    widths.forEach((w, i) => {
+      if (w > max) {
+        max = w;
+        idx = i;
+      }
+    });
+    if (idx === -1) break; // every column at the floor — accept overflow
+    widths[idx] -= 1;
+  }
+
   const rule = (l: string, m: string, r: string) =>
     B(l + widths.map((w) => "─".repeat(w + 2)).join(m) + r);
 
@@ -43,10 +66,11 @@ export function printBoard(
     vals
       .map((v, i) => {
         const w = widths[i];
+        const t = truncateVisible(v, w);
         const cell =
           columns[i].align === "right"
-            ? " ".repeat(Math.max(0, w - visibleLength(v))) + v
-            : padVisible(v, w);
+            ? " ".repeat(Math.max(0, w - visibleLength(t))) + t
+            : padVisible(t, w);
         return " " + cell + " ";
       })
       .join(B(glyph.v)) +
@@ -55,12 +79,23 @@ export function printBoard(
   // Blank padded row used to space data rows apart.
   const spacer = rowLine(columns.map(() => ""));
 
+  // A row whose cells exceed their column width wraps onto extra lines instead
+  // of being clipped — each cell is wrapped to its width and the tallest cell
+  // sets the row height; shorter cells pad with blanks.
+  const drawRow = (vals: string[]) => {
+    const perCell = vals.map((v, i) => wrapVisible(v, widths[i]));
+    const height = Math.max(1, ...perCell.map((l) => l.length));
+    for (let k = 0; k < height; k++) {
+      console.log(pre + rowLine(perCell.map((lines) => lines[k] ?? "")));
+    }
+  };
+
   console.log(pre + rule("┌", "┬", "┐"));
-  console.log(pre + rowLine(columns.map((c) => theme.dim(c.header))));
+  drawRow(columns.map((c) => theme.dim(c.header)));
   console.log(pre + rule("├", "┼", "┤"));
   cells.forEach((row, idx) => {
     if (idx > 0 && options.spaced) console.log(pre + spacer);
-    console.log(pre + rowLine(row));
+    drawRow(row);
   });
   console.log(pre + rule("└", "┴", "┘"));
 }

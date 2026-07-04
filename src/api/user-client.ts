@@ -133,8 +133,15 @@ export async function resolveProjectId(
   projectId?: string,
   opts: { useSaved?: boolean } = {}
 ): Promise<string> {
-  if (projectId) return projectId;
   const useSaved = opts.useSaved !== false;
+
+  // Explicit --project-id is passed through as-is: the API authorizes every
+  // request, so pre-checking here would only add a round-trip. An id the user
+  // can't access fails at the first API call.
+  if (projectId) {
+    return String(projectId);
+  }
+
   if (useSaved) {
     const ctx = getContext();
     if (ctx.projectId && ctx.orgId === orgId) {

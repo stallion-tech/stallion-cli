@@ -2,12 +2,27 @@ import { theme } from "./theme";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
+// Fixed en-US locale so the format is stable across machines; timezone is left
+// unset so it renders in the machine's LOCAL time. Human-facing only — --json
+// emits the raw ISO/UTC string (it never goes through this formatter).
+const DATE_FMT = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+const TIME_FMT = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+// e.g. "July 2, 2026 2:20 PM" (local time).
 function formatDate(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0");
-  return (
-    `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ` +
-    `${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`
-  );
+  try {
+    return `${DATE_FMT.format(d)} ${TIME_FMT.format(d)}`;
+  } catch {
+    return d.toISOString();
+  }
 }
 
 /** Plain (uncolored) string for a cell value. */

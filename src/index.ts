@@ -12,6 +12,8 @@ import { showBanner, showWelcome } from "@/ui";
 import { ui } from "@/ui";
 import { getVersion } from "@utils/version";
 import { normalizeOptions } from "@utils/normalize";
+import { restoreStdout } from "@utils/stdout";
+import { mapServerError } from "@utils/errors";
 import { rimraf } from "rimraf";
 import fs from "fs";
 
@@ -59,7 +61,12 @@ getCommands().forEach((options, name) => {
 
       await registry.executeCommand(name, opts);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+      // A command may have silenced stdout for --json; undo that first so the
+      // error object below reaches real stdout, not stderr.
+      restoreStdout();
+      const message = mapServerError(
+        error instanceof Error ? error.message : "Unknown error"
+      );
       // In JSON mode, surface the failure as JSON on stdout so `jq` consumers
       // get a parseable error object; the human line still goes to stderr.
       if (opts.json) {

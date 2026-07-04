@@ -6,6 +6,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { createUserApiClient, resolveOrgContext } from "@/api/user-client";
 import { ui } from "@/ui";
 import { getContext } from "@/utils/context-store";
+import { capRecent, printListFooter } from "@/utils/list";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -36,9 +37,13 @@ export class ListProjectsCommand extends BaseCommand {
     }
 
     const ctx = getContext();
+    const { shown, total, capped } = capRecent(
+      projects,
+      (p: any) => p.createdAt ?? p.updatedAt
+    );
     ui.section("projects");
     ui.numbered(
-      projects.map((p: any) => {
+      shown.map((p: any) => {
         const platforms =
           [p.androidEnabled ? "android" : null, p.iosEnabled ? "ios" : null]
             .filter(Boolean)
@@ -51,7 +56,6 @@ export class ListProjectsCommand extends BaseCommand {
       }),
       { indent: ui.INDENT }
     );
-    ui.blank();
-    ui.hint(`  ${projects.length} project${projects.length === 1 ? "" : "s"}`);
+    printListFooter("project", shown.length, total, capped);
   }
 }

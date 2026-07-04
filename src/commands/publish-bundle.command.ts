@@ -232,7 +232,7 @@ export class PublishBundleCommand extends BaseCommand {
     // poll until it's queryable, otherwise a following release-bundle can race
     // ahead into "bundle not found". Best-effort — it never fails the publish.
     let registered = true;
-    const { hash, version } = await progress(
+    const { hash, version, bucketCreated, bucketName } = await progress(
       chalk.white("Publishing bundle"),
       async (updateProgress) => {
         const result = await this.uploadBundle(
@@ -263,11 +263,16 @@ export class PublishBundleCommand extends BaseCommand {
 
     if (json) {
       restoreStdout?.();
-      console.log(JSON.stringify({ version, hash, platform, uploadPath }));
+      console.log(
+        JSON.stringify({ version, hash, platform, uploadPath, bucketCreated })
+      );
     } else {
+      if (bucketCreated) {
+        ui.status.ok(`Created new bucket "${bucketName}"`);
+      }
       ui.status.ok(`Published version ${version}`);
       ui.keyValue([
-        ["Hash", hash],
+        ["Published bundle hash", hash],
         ["Platform", platform],
         ["Upload Path", uploadPath],
       ]);
@@ -360,9 +365,13 @@ export class PublishBundleCommand extends BaseCommand {
       const projectId = signedUrlResp?.meta?.projectId
         ? String(signedUrlResp.meta.projectId)
         : null;
+      // The server creates the bucket on the fly when `uploadPath` is new; it
+      // signals that via meta.bucketCreated so we can tell the user.
+      const bucketCreated = Boolean(signedUrlResp?.meta?.bucketCreated);
+      const bucketName = signedUrlResp?.meta?.bucketName ?? uploadPath;
 
       await client.putWithProgress(url, filePath, "application/zip", onProgress);
-      return { hash, version, projectId };
+      return { hash, version, projectId, bucketCreated, bucketName };
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {
         throw "Error uploading bundle. Signature does not match.";

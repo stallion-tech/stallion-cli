@@ -34,6 +34,17 @@ const expectedOptions: CommandOption[] = [
 @ValidateUser()
 export class ReleaseInfoCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
+    // Flag dependency ladder: a release is identified by
+    // (platform, appVersion, promotedId) — partial combos are ambiguous.
+    if (options.appVersion && !options.platform) {
+      throw new Error("--platform is required when --app-version is provided");
+    }
+    if (options.promotedId && (!options.appVersion || !options.platform)) {
+      throw new Error(
+        "--platform and --app-version are required when --promoted-id is provided"
+      );
+    }
+
     const json = Boolean(options.json);
     const detail = await this.fetchDetail(options);
     if (!detail) return;

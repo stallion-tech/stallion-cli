@@ -27,6 +27,9 @@ const theme = {
   },
 } as const;
 
+/** Interactive prompts render to stderr so stdout stays clean for --json/jq. */
+const PROMPT_CTX = { output: process.stderr };
+
 /** Lists longer than this switch to a type-ahead (filterable) prompt. */
 const SEARCH_THRESHOLD = 8;
 
@@ -37,7 +40,7 @@ export async function promptText(
   message: string,
   defaultValue?: string
 ): Promise<string> {
-  return input({ message, default: defaultValue, theme });
+  return input({ message, default: defaultValue, theme }, PROMPT_CTX);
 }
 
 /**
@@ -47,7 +50,7 @@ export async function promptConfirm(
   message: string,
   defaultValue: boolean = true
 ): Promise<boolean> {
-  return confirm({ message, default: defaultValue, theme });
+  return confirm({ message, default: defaultValue, theme }, PROMPT_CTX);
 }
 
 /**
@@ -72,9 +75,12 @@ export async function promptSelect<T>(
         );
       },
       theme,
-    });
+    }, PROMPT_CTX);
   }
-  return select<T>({ message, choices, pageSize: 12, loop: false, theme });
+  return select<T>(
+    { message, choices, pageSize: 12, loop: false, theme },
+    PROMPT_CTX
+  );
 }
 
 /**
@@ -84,14 +90,17 @@ export async function promptMultiSelect<T>(
   message: string,
   choices: Array<SelectChoice<T>>
 ): Promise<T[]> {
-  return checkbox<T>({ message, choices, pageSize: 12, loop: false, theme });
+  return checkbox<T>(
+    { message, choices, pageSize: 12, loop: false, theme },
+    PROMPT_CTX
+  );
 }
 
 /**
  * Prompt for a password
  */
 export async function promptPassword(message: string): Promise<string> {
-  return password({ message, mask: "*", theme });
+  return password({ message, mask: "*", theme }, PROMPT_CTX);
 }
 
 /**
@@ -101,6 +110,6 @@ export async function promptNumber(
   message: string,
   defaultValue?: number
 ): Promise<number> {
-  const answer = await number({ message, default: defaultValue, theme });
+  const answer = await number({ message, default: defaultValue, theme }, PROMPT_CTX);
   return answer ?? 0;
 }

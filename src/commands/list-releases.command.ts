@@ -13,12 +13,14 @@ import {
 } from "@/api/user-client";
 import { ui } from "@/ui";
 import { bar, glyph, printBoard, renderValue, theme } from "@/ui";
+import { CONSOLE_URL, MAX_LIST_LIMIT, resolveLimit } from "@/utils/list";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
   { name: "project-id", description: "Project id (prompts if omitted; required with --ci-token)", required: false },
   { name: "platform", description: "Platform (android|ios); prompts if omitted", required: false },
   { name: "app-version", description: "App version; prompts if omitted (required with --ci-token)", required: false },
+  { name: "limit", description: "Max releases to show (default 15, max 30)", required: false },
   { name: "ci-token", description: "CI token (non-interactive; requires --project-id, --platform, --app-version)", required: false },
   { name: "json", description: "Output raw JSON", required: false },
 ];
@@ -32,8 +34,15 @@ const expectedOptions: CommandOption[] = [
 @ValidateUser()
 export class ListReleasesCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
+    // An app version only identifies releases together with a platform —
+    // half-specifying is almost certainly a mistake, so fail fast.
+    if (options.appVersion && !options.platform) {
+      throw new Error("--platform is required when --app-version is provided");
+    }
+
     const json = Boolean(options.json);
-    const { appVersion, releases } = await this.fetchReleases(options);
+    const limit = resolveLimit(options.limit);
+    const { appVersion, releases } = await this.fetchReleases(options, limit);
 
     if (json) {
       console.log(JSON.stringify(releases, null, 2));
@@ -50,21 +59,30 @@ export class ListReleasesCommand extends BaseCommand {
       releases,
       [
         {
-          header: "VERSION",
+          header: "Version",
           render: (r) => {
             const v = `v${r.bundleVersion ?? "-"}`;
             return r === releases[0] ? theme.accent(v) : v;
           },
         },
         {
-          header: "ROLLOUT",
+          header: "Released by",
+          render: (r) => renderValue(r.author?.email ?? r.author?.fullName),
+        },
+        {
+          header: "Rollout",
           render: (r) => {
-            const pct = r.isRolledBack ? 0 : 100;
+            const pct =
+              r.rolloutPercent != null
+                ? Number(r.rolloutPercent)
+                : r.isRolledBack
+                  ? 0
+                  : 100;
             return `${bar(pct)} ${String(pct).padStart(3)}%`;
           },
         },
         {
-          header: "STATUS",
+          header: "Status",
           render: (r) => {
             if (r.isRolledBack)
               return `${theme.danger(glyph.cross)} rolled back`;
@@ -72,18 +90,27 @@ export class ListReleasesCommand extends BaseCommand {
             return `${theme.ok(glyph.tick)} live`;
           },
         },
-        { header: "RELEASE ID", render: (r) => renderValue(r.id) },
+        { header: "Release note", render: (r) => renderValue(r.releaseNote) },
+        { header: "Release ID", render: (r) => renderValue(r.id) },
       ],
       { indent: ui.INDENT, spaced: true }
     );
+
     ui.blank();
-    ui.hint(
-      `  ${releases.length} release${releases.length === 1 ? "" : "s"} · v${appVersion}`
-    );
+    if (releases.length >= limit) {
+      ui.hint(
+        `  Showing the ${limit} most recent releases. Raise with --limit (max ${MAX_LIST_LIMIT}), or see all → ${CONSOLE_URL}`
+      );
+    } else {
+      ui.hint(
+        `  ${releases.length} release${releases.length === 1 ? "" : "s"} · v${appVersion}`
+      );
+    }
   }
 
   private async fetchReleases(
-    options: Record<string, any>
+    options: Record<string, any>,
+    limit: number
   ): Promise<{ appVersion: string; releases: any[] }> {
     if (options.ciToken) {
       const { projectId, platform, appVersion } = options;
@@ -98,6 +125,7 @@ export class ListReleasesCommand extends BaseCommand {
           projectId,
           platform,
           appVersion,
+          limit,
         })
       );
       return { appVersion, releases: res?.data ?? [] };
@@ -138,6 +166,7 @@ export class ListReleasesCommand extends BaseCommand {
         projectId,
         platform,
         appVersion,
+        limit,
       })
     );
     return { appVersion, releases: res?.data ?? [] };
