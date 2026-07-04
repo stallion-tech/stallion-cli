@@ -56,9 +56,14 @@ export class GenerateKeyPairCommand extends BaseCommand {
       ui.text("It is solely your responsibility to store and manage your signing keys — losing them can break your release pipeline.");
       ui.text("Do NOT regenerate keys unless absolutely necessary; it may break compatibility with existing Stallion releases.");
 
+      ui.section("If keys are lost");
+      ui.text("Publish your next Stallion release without bundle signing.");
+      ui.text("Regenerate and include the new keys in your next Play Store release.");
+      ui.text("Once that Play Store update is live, resume signed Stallion releases as normal.");
+
       ui.blank();
       ui.status.warn("Keep your private key secure — never share or commit it.");
-      ui.status.fail("Stallion cannot recover or validate lost keys.");
+      ui.status.fail("Stallion cannot recover or validate lost keys — treat them as production secrets.");
     } catch (error: any) {
       ui.status.fail("Failed to generate keys");
       if (error instanceof Error) ui.hint(`  ${error.message}`);
