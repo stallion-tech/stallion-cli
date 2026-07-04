@@ -15,6 +15,7 @@ import "@/commands/list-projects.command";
 import "@/commands/list-buckets.command";
 import "@/commands/list-bundles.command";
 import "@/commands/list-releases.command";
+import "@/commands/list-patches.command";
 import "@/commands/release-info.command";
 import "@/commands/use.command";
 import "@/commands/context.command";
@@ -51,6 +52,7 @@ export class CommandRegistry {
       'ListBucketsCommand',
       'ListBundlesCommand',
       'ListReleasesCommand',
+      'ListPatchesCommand',
       'ReleaseInfoCommand',
     ];
     return supportsCIToken.includes(commandName) && Boolean(options.ciToken);

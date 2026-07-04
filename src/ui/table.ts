@@ -12,6 +12,12 @@ export interface BoardColumn {
   /** Pre-colored display string for the cell (measured by visible width). */
   render: (row: any) => string;
   align?: "left" | "right";
+  /**
+   * Floor for responsive shrinking. Content wider than the final column width
+   * wraps onto extra lines, so a column that must stay readable (e.g. a hash
+   * that wraps into copyable halves) can pin its minimum width here.
+   */
+  minWidth?: number;
 }
 
 /**
@@ -44,17 +50,18 @@ export function printBoard(
   const overhead = (options.indent ?? 0) + (n + 1) + n * 2; // borders + padding
   const budget = termWidth - overhead;
   const MIN = 4;
+  const floorFor = (i: number) => Math.max(MIN, columns[i].minWidth ?? MIN);
   const sum = () => widths.reduce((a, b) => a + b, 0);
   while (sum() > budget) {
     let idx = -1;
-    let max = MIN;
+    let max = 0;
     widths.forEach((w, i) => {
-      if (w > max) {
+      if (w > floorFor(i) && w > max) {
         max = w;
         idx = i;
       }
     });
-    if (idx === -1) break; // every column at the floor — accept overflow
+    if (idx === -1) break; // every column at its floor — accept overflow
     widths[idx] -= 1;
   }
 

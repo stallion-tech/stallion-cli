@@ -26,22 +26,21 @@ const expectedOptions: CommandOption[] = [
 ];
 
 const bundleColumns: BoardColumn[] = [
-  { header: "VERSION", render: (b) => renderValue(b.version) },
-  { header: "PLATFORM", render: (b) => renderValue(b.platform) },
-  { header: "PROMOTED", render: (b) => renderValue(Boolean(b.isPromoted)) },
-  { header: "CREATED", render: (b) => renderValue(b.createdAt) },
+  { header: "Version", render: (b) => renderValue(b.version) },
+  { header: "Platform", render: (b) => renderValue(b.platform) },
+  { header: "Promoted", render: (b) => renderValue(Boolean(b.isPromoted)) },
+  { header: "Created", render: (b) => renderValue(b.createdAt) },
   {
-    header: "AUTHOR",
+    header: "author",
     render: (b) => renderValue(b.author?.fullName ?? b.author?.email),
   },
-  // Short hash for quick row identification; the full (copy-pasteable) hash is
-  // printed below the table since 64 chars is too wide for a scannable column.
+  { header: "ReleaseNote", render: (b) => renderValue(b.releaseNote) },
+  // Full hash (release-bundle consumes it). minWidth 32 → on narrow terminals
+  // the 64-char value wraps into two clean halves instead of being crushed.
   {
-    header: "HASH",
-    render: (b) => {
-      const h = b.sha256Checksum;
-      return renderValue(h ? `${String(h).slice(0, 10)}…` : h);
-    },
+    header: "Hash",
+    render: (b) => renderValue(b.sha256Checksum),
+    minWidth: 32,
   },
 ];
 
@@ -74,14 +73,6 @@ export class ListBundlesCommand extends BaseCommand {
     }
 
     printBoard(bundles, bundleColumns, { indent: ui.INDENT, spaced: true });
-
-    // Full hashes as plain, copy-pasteable lines (for `release-bundle --hash`),
-    // keyed by version so they map back to the table above.
-    const withHash = bundles.filter((b: any) => b.sha256Checksum);
-    if (withHash.length) {
-      ui.section("Hashes");
-      ui.keyValue(withHash.map((b: any) => [`v${b.version}`, b.sha256Checksum]));
-    }
 
     // The server returns at most `limit`; if we got exactly that many there
     // may be more (narrow with --platform, raise --limit, or use the console).
