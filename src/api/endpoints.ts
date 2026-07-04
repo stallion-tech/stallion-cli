@@ -31,6 +31,11 @@ export const ENDPOINTS = {
     BY_HASH: "/cli/bundle-by-hash",
     CI_BY_HASH: "/cli/ci/bundle-by-hash",
   },
+  PATCH: {
+    // Patches generated toward a release bundle (delta updates).
+    INFO: "/cli/patch-info",
+    CI_INFO: "/cli/ci/patch-info",
+  },
   PROMOTED: {
     LISTING: "/cli/list-releases",
     CI_LISTING: "/cli/ci/list-releases",
