@@ -132,7 +132,7 @@ export class ListReleasesCommand extends BaseCommand {
     }
 
     const { orgId, region } = await resolveOrgContext(options.orgId);
-    const projectId = await resolveProjectId(orgId, options.projectId);
+    const projectId = await resolveProjectId(orgId, region, options.projectId);
     const platform = await resolvePlatform(options.platform);
     const client = await createUserApiClient(region);
 

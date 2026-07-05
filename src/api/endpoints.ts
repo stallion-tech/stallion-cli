@@ -18,7 +18,9 @@ export const ENDPOINTS = {
     LIST: "/cli/list-orgs", // user token only (org scope needs a user)
   },
   PROJECT: {
-    LIST: "/cli/list-projects", // user token only
+    // User token only. Projects are hosted per region — call this on the
+    // org's regional API, not the global one.
+    LIST: "/cli/list-projects",
   },
   BUCKET: {
     LIST: "/cli/list-buckets",

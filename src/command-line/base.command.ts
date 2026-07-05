@@ -4,7 +4,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import opener from "opener";
 import os from "os";
 import { createDefaultTokenStore } from "@/utils/token-store";
-import { setContext } from "@/utils/context-store";
+import { clearContext, setContext } from "@/utils/context-store";
 import { ApiClient } from "@/api/api-client";
 import { CONFIG } from "@/api/config";
 import { progress } from "@/utils/progress";
@@ -124,8 +124,7 @@ export abstract class BaseCommand {
     try {
       const tokenStore = createDefaultTokenStore();
       await tokenStore.remove("cli");
-      // Drop the cached profile so the greeting doesn't show a stale name.
-      setContext({ userName: undefined, userEmail: undefined });
+      clearContext();
       ui.status.ok("Logged out successfully");
       return true;
     } catch (error) {

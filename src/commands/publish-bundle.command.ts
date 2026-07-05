@@ -242,15 +242,20 @@ export class PublishBundleCommand extends BaseCommand {
           platform,
           releaseNote,
           ciToken,
-          updateProgress
+          (p) => updateProgress(p * 0.95)
         );
         if (result.projectId) {
-          registered = await this.waitForBundle(client, {
-            ciToken,
-            projectId: result.projectId,
-            hash: result.hash,
-          });
+          registered = await this.waitForBundle(
+            client,
+            {
+              ciToken,
+              projectId: result.projectId,
+              hash: result.hash,
+            },
+            (elapsedFraction) => updateProgress(95 + elapsedFraction * 4)
+          );
         }
+        updateProgress(100);
         return result;
       }
     );
@@ -288,7 +293,8 @@ export class PublishBundleCommand extends BaseCommand {
    */
   private async waitForBundle(
     client: ApiClient,
-    opts: { ciToken?: string; projectId: string; hash: string }
+    opts: { ciToken?: string; projectId: string; hash: string },
+    onTick?: (elapsedFraction: number) => void
   ): Promise<boolean> {
     const { ciToken, projectId, hash } = opts;
     const endpoint = ciToken
@@ -296,9 +302,12 @@ export class PublishBundleCommand extends BaseCommand {
       : ENDPOINTS.BUNDLE.BY_HASH;
     const config = ciToken ? { headers: { "x-ci-token": ciToken } } : undefined;
     const intervalMs = 2000;
-    const deadline = Date.now() + 60_000;
+    const windowMs = 60_000;
+    const start = Date.now();
+    const deadline = start + windowMs;
 
     while (Date.now() < deadline) {
+      onTick?.(Math.min(1, (Date.now() - start) / windowMs));
       try {
         const res = await client.post<{ data: { exists: boolean } }>(
           endpoint,

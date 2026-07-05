@@ -88,7 +88,7 @@ export class ListBucketsCommand extends BaseCommand {
     }
 
     const { orgId, region } = await resolveOrgContext(options.orgId);
-    const projectId = await resolveProjectId(orgId, options.projectId);
+    const projectId = await resolveProjectId(orgId, region, options.projectId);
     const client = await createUserApiClient(region);
     const res = await progress("Fetching buckets", () =>
       client.post<{ data: any[] }>(ENDPOINTS.BUCKET.LIST, {

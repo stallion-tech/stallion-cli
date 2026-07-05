@@ -130,6 +130,7 @@ export async function resolveOrgContext(
  */
 export async function resolveProjectId(
   orgId: string,
+  region: string,
   projectId?: string,
   opts: { useSaved?: boolean } = {}
 ): Promise<string> {
@@ -149,7 +150,7 @@ export async function resolveProjectId(
     }
   }
 
-  const client = await createUserApiClient();
+  const client = await createUserApiClient(region);
   const res = await client.post<{ data: any[] }>(ENDPOINTS.PROJECT.LIST, {
     orgId,
   });

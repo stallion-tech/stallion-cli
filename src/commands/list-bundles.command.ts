@@ -112,7 +112,7 @@ export class ListBundlesCommand extends BaseCommand {
     }
 
     const { orgId, region } = await resolveOrgContext(options.orgId);
-    const projectId = await resolveProjectId(orgId, options.projectId);
+    const projectId = await resolveProjectId(orgId, region, options.projectId);
     // Explicit --bucket / --bucket-id go straight to the server (it resolves +
     // authorizes the name); only prompt with the picker when neither is given.
     let bucketId = options.bucketId as string | undefined;
