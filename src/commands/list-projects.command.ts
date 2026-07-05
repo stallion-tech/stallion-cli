@@ -7,6 +7,7 @@ import { createUserApiClient, resolveOrgContext } from "@/api/user-client";
 import { ui } from "@/ui";
 import { getContext } from "@/utils/context-store";
 import { capRecent, printListFooter } from "@/utils/list";
+import { ProjectSummary } from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -29,7 +30,7 @@ export class ListProjectsCommand extends BaseCommand {
     const client = await createUserApiClient(region);
 
     const res = await progress("Fetching projects", () =>
-      client.post<{ data: any[] }>(ENDPOINTS.PROJECT.LIST, { orgId })
+      client.post<{ data: ProjectSummary[] }>(ENDPOINTS.PROJECT.LIST, { orgId })
     );
     const projects = res?.data ?? [];
 
@@ -41,17 +42,17 @@ export class ListProjectsCommand extends BaseCommand {
     const ctx = getContext();
     const { shown, total, capped } = capRecent(
       projects,
-      (p: any) => p.createdAt ?? p.updatedAt
+      (p) => p.createdAt ?? p.updatedAt
     );
     ui.section("projects");
     ui.numbered(
-      shown.map((p: any) => {
+      shown.map((p) => {
         const platforms =
           [p.androidEnabled ? "android" : null, p.iosEnabled ? "ios" : null]
             .filter(Boolean)
             .join("·") || "—";
         return {
-          label: p.name,
+          label: p.name ?? "(unnamed)",
           meta: platforms,
           current: ctx.projectId === String(p.id ?? p._id),
         };

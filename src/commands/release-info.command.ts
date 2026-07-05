@@ -14,6 +14,11 @@ import {
 import { printBoard } from "@/ui";
 import { ui } from "@/ui";
 import chalk from "chalk";
+import {
+  AppVersionSummary,
+  ReleaseDetail,
+  ReleaseSummary,
+} from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -117,7 +122,7 @@ export class ReleaseInfoCommand extends BaseCommand {
   /** Resolve the release detail via the CI-token or interactive user path. */
   private async fetchDetail(
     options: Record<string, any>
-  ): Promise<any | null> {
+  ): Promise<ReleaseDetail | null> {
     if (options.ciToken) {
       const { projectId, platform, appVersion, promotedId } = options;
       if (!projectId || !platform || !appVersion || !promotedId) {
@@ -127,7 +132,7 @@ export class ReleaseInfoCommand extends BaseCommand {
       }
       const client = createCiApiClient(options.ciToken);
       const res = await progress("Fetching release detail", () =>
-        client.post<{ data: any }>(ENDPOINTS.PROMOTED.CI_DETAIL, {
+        client.post<{ data: ReleaseDetail }>(ENDPOINTS.PROMOTED.CI_DETAIL, {
           projectId,
           platform,
           appVersion,
@@ -145,7 +150,7 @@ export class ReleaseInfoCommand extends BaseCommand {
     let appVersion = options.appVersion;
     if (!appVersion) {
       const verRes = await progress("Fetching app versions", () =>
-        client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.LIST_APP_VERSIONS, {
+        client.post<{ data: AppVersionSummary[] }>(ENDPOINTS.PROMOTED.LIST_APP_VERSIONS, {
           projectId,
           platform,
         })
@@ -170,7 +175,7 @@ export class ReleaseInfoCommand extends BaseCommand {
     let promotedId = options.promotedId;
     if (!promotedId) {
       const relRes = await progress("Fetching releases", () =>
-        client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.LISTING, {
+        client.post<{ data: ReleaseSummary[] }>(ENDPOINTS.PROMOTED.LISTING, {
           projectId,
           platform,
           appVersion,
@@ -203,7 +208,7 @@ export class ReleaseInfoCommand extends BaseCommand {
     }
 
     const res = await progress("Fetching release detail", () =>
-      client.post<{ data: any }>(ENDPOINTS.PROMOTED.DETAIL, {
+      client.post<{ data: ReleaseDetail }>(ENDPOINTS.PROMOTED.DETAIL, {
         projectId,
         platform,
         appVersion,

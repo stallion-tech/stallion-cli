@@ -6,6 +6,10 @@ import fs from "fs/promises";
 import { generateKeyPairSync } from "crypto";
 import { ui } from "@/ui";
 
+// RSA key size for bundle-signing key pairs. 2048 is the size the Stallion
+// SDK verifies against on-device — bump here only in lockstep with the SDK.
+const RSA_MODULUS_LENGTH = 2048;
+
 @Command({
   name: "generate-key-pair",
   description: "Generate Private & Public keys",
@@ -32,7 +36,7 @@ export class GenerateKeyPairCommand extends BaseCommand {
 
     try {
       const { privateKey, publicKey } = generateKeyPairSync("rsa", {
-        modulusLength: 2048,
+        modulusLength: RSA_MODULUS_LENGTH,
         publicKeyEncoding: { type: "spki", format: "pem" },
         privateKeyEncoding: { type: "pkcs8", format: "pem" },
       });

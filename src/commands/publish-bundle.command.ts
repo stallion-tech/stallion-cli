@@ -19,7 +19,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { createZip } from "@/utils/archive";
 import { keepArtifacts as saveArtifacts } from "@/utils/copy";
-import { getApiBaseUrl } from "@/utils/common";
+import { getApiBaseUrl, PLATFORMS } from "@/utils/common";
 import { resolveRegion } from "@/utils/region";
 import { silenceStdout } from "@/utils/stdout";
 
@@ -145,7 +145,9 @@ export class PublishBundleCommand extends BaseCommand {
     await fs.mkdir(this.contentRootPath);
 
     if (!isValidPlatform(platform)) {
-      throw new Error(`Platform must be "android" or "ios".`);
+      throw new Error(
+        `Platform must be ${PLATFORMS.map((p) => `"${p}"`).join(" or ")}.`
+      );
     }
 
     // Run RN Command and Hermes Command only when expoBundlePath is not provided

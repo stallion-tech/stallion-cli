@@ -6,6 +6,7 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { createUserApiClient, fetchOrgs } from "@/api/user-client";
 import { ui } from "@/ui";
 import { getContext } from "@/utils/context-store";
+import { UserProfile } from "@/api/types";
 
 @Command({
   name: "whoami",
@@ -18,7 +19,9 @@ export class WhoamiCommand extends BaseCommand {
     const client = await createUserApiClient();
 
     const { profile, orgs } = await progress("Fetching profile", async () => {
-      const profileRes = await client.get<{ data: any }>(ENDPOINTS.USER.VERIFY);
+      const profileRes = await client.get<{ data: UserProfile }>(
+        ENDPOINTS.USER.VERIFY
+      );
       const orgsList = await fetchOrgs(client);
       return { profile: profileRes?.data, orgs: orgsList };
     });

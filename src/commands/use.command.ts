@@ -7,6 +7,7 @@ import { promptSelect } from "@/utils/prompt";
 import { ENDPOINTS } from "@/api/endpoints";
 import { createUserApiClient, fetchOrgs } from "@/api/user-client";
 import { setContext } from "@/utils/context-store";
+import { ProjectSummary } from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -53,7 +54,9 @@ export class UseCommand extends BaseCommand {
     // global API the org listing came from.
     const regionalClient = await createUserApiClient(region);
     const projRes = await progress("Fetching projects", () =>
-      regionalClient.post<{ data: any[] }>(ENDPOINTS.PROJECT.LIST, { orgId })
+      regionalClient.post<{ data: ProjectSummary[] }>(ENDPOINTS.PROJECT.LIST, {
+        orgId,
+      })
     );
     const projects = projRes?.data ?? [];
     if (!projects.length) {
@@ -64,7 +67,7 @@ export class UseCommand extends BaseCommand {
     let projectId = options.projectId as string | undefined;
     if (
       projectId &&
-      !projects.some((p: any) => String(p.id ?? p._id) === projectId)
+      !projects.some((p) => String(p.id ?? p._id) === projectId)
     ) {
       ui.status.fail(`Project "${projectId}" not found in this organization.`);
       return;
@@ -72,7 +75,7 @@ export class UseCommand extends BaseCommand {
     if (!projectId) {
       projectId = await promptSelect<string>(
         "Select a project",
-        projects.map((p: any) => {
+        projects.map((p) => {
           const id = String(p.id ?? p._id);
           const platforms = [
             p.androidEnabled ? "android" : null,
@@ -81,7 +84,7 @@ export class UseCommand extends BaseCommand {
             .filter(Boolean)
             .join("/");
           return {
-            name: p.name,
+            name: p.name ?? "(unnamed)",
             value: id,
             description: `${platforms || "no platforms"}   id: ${id}`,
           };
@@ -89,7 +92,7 @@ export class UseCommand extends BaseCommand {
       );
     }
     const project = projects.find(
-      (p: any) => String(p.id ?? p._id) === projectId
+      (p) => String(p.id ?? p._id) === projectId
     );
 
     setContext({

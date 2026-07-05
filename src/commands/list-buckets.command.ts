@@ -12,6 +12,7 @@ import {
 import { ui } from "@/ui";
 import { printBoard, renderValue } from "@/ui";
 import { CONSOLE_URL, MAX_LIST_LIMIT, resolveLimit } from "@/utils/list";
+import { BucketSummary } from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -71,14 +72,14 @@ export class ListBucketsCommand extends BaseCommand {
   private async fetchBuckets(
     options: Record<string, any>,
     limit: number
-  ): Promise<any[]> {
+  ): Promise<BucketSummary[]> {
     if (options.ciToken) {
       if (!options.projectId) {
         throw new Error("--project-id is required with --ci-token");
       }
       const client = createCiApiClient(options.ciToken);
       const res = await progress("Fetching buckets", () =>
-        client.post<{ data: any[] }>(ENDPOINTS.BUCKET.CI_LIST, {
+        client.post<{ data: BucketSummary[] }>(ENDPOINTS.BUCKET.CI_LIST, {
           projectId: options.projectId,
           name: options.name,
           limit,
@@ -91,7 +92,7 @@ export class ListBucketsCommand extends BaseCommand {
     const projectId = await resolveProjectId(orgId, region, options.projectId);
     const client = await createUserApiClient(region);
     const res = await progress("Fetching buckets", () =>
-      client.post<{ data: any[] }>(ENDPOINTS.BUCKET.LIST, {
+      client.post<{ data: BucketSummary[] }>(ENDPOINTS.BUCKET.LIST, {
         projectId,
         name: options.name,
         limit,

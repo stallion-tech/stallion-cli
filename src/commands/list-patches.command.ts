@@ -11,6 +11,7 @@ import {
   resolveProjectId,
 } from "@/api/user-client";
 import { BoardColumn, printBoard, renderValue } from "@/ui";
+import { PatchInfo } from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -77,14 +78,14 @@ export class ListPatchesCommand extends BaseCommand {
   private async fetchPatches(
     options: Record<string, any>,
     releaseHash: string
-  ): Promise<any[]> {
+  ): Promise<PatchInfo[]> {
     if (options.ciToken) {
       if (!options.projectId) {
         throw new Error("--project-id is required with --ci-token");
       }
       const client = createCiApiClient(options.ciToken);
       const res = await progress("Fetching patches", () =>
-        client.post<{ data: { patchInfo: any[] } }>(ENDPOINTS.PATCH.CI_INFO, {
+        client.post<{ data: { patchInfo: PatchInfo[] } }>(ENDPOINTS.PATCH.CI_INFO, {
           projectId: options.projectId,
           releaseHash,
         })
@@ -96,7 +97,7 @@ export class ListPatchesCommand extends BaseCommand {
     const projectId = await resolveProjectId(orgId, region, options.projectId);
     const client = await createUserApiClient(region);
     const res = await progress("Fetching patches", () =>
-      client.post<{ data: { patchInfo: any[] } }>(ENDPOINTS.PATCH.INFO, {
+      client.post<{ data: { patchInfo: PatchInfo[] } }>(ENDPOINTS.PATCH.INFO, {
         projectId,
         releaseHash,
       })

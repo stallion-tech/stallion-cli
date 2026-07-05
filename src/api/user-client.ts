@@ -1,11 +1,12 @@
 import { ApiClient } from "@/api/api-client";
 import { CONFIG } from "@/api/config";
 import { ENDPOINTS } from "@/api/endpoints";
-import { getApiBaseUrl } from "@/utils/common";
+import { getApiBaseUrl, PLATFORMS } from "@/utils/common";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { promptSelect } from "@/utils/prompt";
 import { getContext, setContext } from "@/utils/context-store";
 import { parseTokenRegion } from "@/utils/region";
+import { BucketSummary, ProjectSummary } from "@/api/types";
 
 /**
  * Build an ApiClient authenticated with a CI token (x-ci-token). Region is
@@ -151,16 +152,17 @@ export async function resolveProjectId(
   }
 
   const client = await createUserApiClient(region);
-  const res = await client.post<{ data: any[] }>(ENDPOINTS.PROJECT.LIST, {
-    orgId,
-  });
+  const res = await client.post<{ data: ProjectSummary[] }>(
+    ENDPOINTS.PROJECT.LIST,
+    { orgId }
+  );
   const projects = res?.data ?? [];
   if (!projects.length) {
     throw new Error("No projects found in this organization.");
   }
   const chosen = await promptSelect<string>(
     "Select a project",
-    projects.map((p: any) => {
+    projects.map((p) => {
       const id = String(p.id ?? p._id);
       const platforms = [
         p.androidEnabled ? "android" : null,
@@ -169,13 +171,13 @@ export async function resolveProjectId(
         .filter(Boolean)
         .join("/");
       return {
-        name: p.name,
+        name: p.name ?? "(unnamed)",
         value: id,
         description: `${platforms || "no platforms"}   id: ${id}`,
       };
     })
   );
-  const proj = projects.find((p: any) => String(p.id ?? p._id) === chosen);
+  const proj = projects.find((p) => String(p.id ?? p._id) === chosen);
   setContext({ orgId, projectId: chosen, projectName: proj?.name });
   return chosen;
 }
@@ -188,18 +190,19 @@ export async function resolveBucketId(
 ): Promise<string> {
   if (bucketId) return bucketId;
   const client = await createUserApiClient(region);
-  const res = await client.post<{ data: any[] }>(ENDPOINTS.BUCKET.LIST, {
-    projectId,
-  });
+  const res = await client.post<{ data: BucketSummary[] }>(
+    ENDPOINTS.BUCKET.LIST,
+    { projectId }
+  );
   const buckets = res?.data ?? [];
   if (!buckets.length) {
     throw new Error("No buckets found in this project.");
   }
   return promptSelect<string>(
     "Select a bucket",
-    buckets.map((b: any) => {
+    buckets.map((b) => {
       const id = String(b.id ?? b._id);
-      return { name: b.name, value: id, description: `id: ${id}` };
+      return { name: b.name ?? "(unnamed)", value: id, description: `id: ${id}` };
     })
   );
 }
@@ -207,8 +210,8 @@ export async function resolveBucketId(
 /** Prompt for a platform when one isn't supplied via flags. */
 export async function resolvePlatform(platform?: string): Promise<string> {
   if (platform) return platform;
-  return promptSelect<string>("Select a platform", [
-    { name: "android", value: "android" },
-    { name: "ios", value: "ios" },
-  ]);
+  return promptSelect<string>(
+    "Select a platform",
+    PLATFORMS.map((p) => ({ name: p, value: p }))
+  );
 }

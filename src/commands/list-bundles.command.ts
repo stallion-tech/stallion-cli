@@ -13,6 +13,7 @@ import {
 } from "@/api/user-client";
 import { BoardColumn, printBoard, renderValue } from "@/ui";
 import { CONSOLE_URL, MAX_LIST_LIMIT, resolveLimit } from "@/utils/list";
+import { BundleSummary } from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -89,7 +90,7 @@ export class ListBundlesCommand extends BaseCommand {
   private async fetchBundles(
     options: Record<string, any>,
     limit: number
-  ): Promise<any[]> {
+  ): Promise<BundleSummary[]> {
     if (options.ciToken) {
       if (!options.projectId || (!options.bucketId && !options.bucket)) {
         throw new Error(
@@ -100,7 +101,7 @@ export class ListBundlesCommand extends BaseCommand {
       // Send name or id straight through — the API resolves the name against
       // the project and authorizes it.
       const res = await progress("Fetching bundles", () =>
-        client.post<{ data: any[] }>(ENDPOINTS.BUNDLE.CI_LIST, {
+        client.post<{ data: BundleSummary[] }>(ENDPOINTS.BUNDLE.CI_LIST, {
           projectId: options.projectId,
           bucketId: options.bucketId,
           bucketName: options.bucket,
@@ -122,7 +123,7 @@ export class ListBundlesCommand extends BaseCommand {
     }
     const client = await createUserApiClient(region);
     const res = await progress("Fetching bundles", () =>
-      client.post<{ data: any[] }>(ENDPOINTS.BUNDLE.LIST, {
+      client.post<{ data: BundleSummary[] }>(ENDPOINTS.BUNDLE.LIST, {
         projectId,
         bucketId,
         bucketName,

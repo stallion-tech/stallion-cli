@@ -5,7 +5,7 @@ import * as rimraf from "rimraf";
 import { ui } from "@/ui";
 import * as childProcess from "child_process";
 import { coerce, compare } from "semver";
-import chalk from "chalk";
+import { PLATFORMS, Platform } from "@/utils/common";
 
 function findUpwardReactNativePackageJson(
   startDir: string = process.cwd()
@@ -80,9 +80,7 @@ function resolvePackageDirFromCwd(packageName: string): string | null {
 }
 
 export function isValidPlatform(platform: string): boolean {
-  return (
-    platform?.toLowerCase() === "android" || platform?.toLowerCase() === "ios"
-  );
+  return PLATFORMS.includes(platform?.toLowerCase() as Platform);
 }
 
 export function fileDoesNotExistOrIsDirectory(path: string): boolean {

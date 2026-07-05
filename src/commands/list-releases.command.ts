@@ -14,6 +14,7 @@ import {
 import { ui } from "@/ui";
 import { bar, glyph, printBoard, renderValue, theme } from "@/ui";
 import { CONSOLE_URL, MAX_LIST_LIMIT, resolveLimit } from "@/utils/list";
+import { AppVersionSummary, ReleaseSummary } from "@/api/types";
 
 const expectedOptions: CommandOption[] = [
   { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
@@ -111,7 +112,7 @@ export class ListReleasesCommand extends BaseCommand {
   private async fetchReleases(
     options: Record<string, any>,
     limit: number
-  ): Promise<{ appVersion: string; releases: any[] }> {
+  ): Promise<{ appVersion: string; releases: ReleaseSummary[] }> {
     if (options.ciToken) {
       const { projectId, platform, appVersion } = options;
       if (!projectId || !platform || !appVersion) {
@@ -121,7 +122,7 @@ export class ListReleasesCommand extends BaseCommand {
       }
       const client = createCiApiClient(options.ciToken);
       const res = await progress("Fetching releases", () =>
-        client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.CI_LISTING, {
+        client.post<{ data: ReleaseSummary[] }>(ENDPOINTS.PROMOTED.CI_LISTING, {
           projectId,
           platform,
           appVersion,
@@ -139,7 +140,7 @@ export class ListReleasesCommand extends BaseCommand {
     let appVersion = options.appVersion;
     if (!appVersion) {
       const verRes = await progress("Fetching app versions", () =>
-        client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.LIST_APP_VERSIONS, {
+        client.post<{ data: AppVersionSummary[] }>(ENDPOINTS.PROMOTED.LIST_APP_VERSIONS, {
           projectId,
           platform,
         })
@@ -162,7 +163,7 @@ export class ListReleasesCommand extends BaseCommand {
     }
 
     const res = await progress("Fetching releases", () =>
-      client.post<{ data: any[] }>(ENDPOINTS.PROMOTED.LISTING, {
+      client.post<{ data: ReleaseSummary[] }>(ENDPOINTS.PROMOTED.LISTING, {
         projectId,
         platform,
         appVersion,
