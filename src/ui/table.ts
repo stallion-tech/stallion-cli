@@ -12,11 +12,7 @@ export interface BoardColumn {
   /** Pre-colored display string for the cell (measured by visible width). */
   render: (row: any) => string;
   align?: "left" | "right";
-  /**
-   * Floor for responsive shrinking. Content wider than the final column width
-   * wraps onto extra lines, so a column that must stay readable (e.g. a hash
-   * that wraps into copyable halves) can pin its minimum width here.
-   */
+  /** Floor for responsive shrinking; over-wide content wraps instead of clipping. */
   minWidth?: number;
 }
 

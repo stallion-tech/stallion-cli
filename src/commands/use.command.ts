@@ -50,8 +50,6 @@ export class UseCommand extends BaseCommand {
     const org = orgs.find((o) => o.orgId === orgId);
     const region = org?.region ?? "ap";
 
-    // Projects live on the org's regional API — list them there, not on the
-    // global API the org listing came from.
     const regionalClient = await createUserApiClient(region);
     const projRes = await progress("Fetching projects", () =>
       regionalClient.post<{ data: ProjectSummary[] }>(ENDPOINTS.PROJECT.LIST, {

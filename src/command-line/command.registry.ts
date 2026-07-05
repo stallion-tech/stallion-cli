@@ -69,8 +69,7 @@ export class CommandRegistry {
       return;
     }
 
-    // Consistent breadcrumb header for every command, except help (which shows
-    // its own banner) and JSON mode (kept clean for scripting).
+    // Skip the breadcrumb for help (own banner) and JSON mode (clean stdout).
     if (name !== "help" && !options.json) {
       ui.header(name);
     }

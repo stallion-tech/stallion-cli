@@ -56,19 +56,15 @@ getCommands().forEach((options, name) => {
   command.action(async (...args) => {
     const opts = normalizeOptions(args.slice(0, args.length - 1));
     try {
-      // Banner is chrome — never emit it in JSON mode (keeps stdout parseable).
       if (!opts.json) showBanner();
 
       await registry.executeCommand(name, opts);
     } catch (error) {
-      // A command may have silenced stdout for --json; undo that first so the
-      // error object below reaches real stdout, not stderr.
+      // Undo any --json stdout silencing so the error object reaches real stdout.
       restoreStdout();
       const message = mapServerError(
         error instanceof Error ? error.message : "Unknown error"
       );
-      // In JSON mode, surface the failure as JSON on stdout so `jq` consumers
-      // get a parseable error object; the human line still goes to stderr.
       if (opts.json) {
         process.stdout.write(JSON.stringify({ error: message }) + "\n");
       }

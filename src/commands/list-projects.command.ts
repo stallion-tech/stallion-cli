@@ -24,8 +24,6 @@ const expectedOptions: CommandOption[] = [
 export class ListProjectsCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
     const json = Boolean(options.json);
-    // Projects live on the org's regional API — the global API only sees its
-    // own region's projects.
     const { orgId, region } = await resolveOrgContext(options.orgId);
     const client = await createUserApiClient(region);
 

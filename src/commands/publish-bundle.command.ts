@@ -118,9 +118,8 @@ export class PublishBundleCommand extends BaseCommand {
       throw new Error("No react native project found in current directory");
     }
 
-    // In JSON mode, route all incidental output (logs, spinners, the RN bundler's
-    // own stdout) to stderr so stdout carries ONLY the final JSON result. Left in
-    // place on error: the failure goes to stderr and stdout stays empty.
+    // --json: stdout carries only the final JSON result; everything else
+    // (logs, spinners, the RN bundler's stdout) goes to stderr.
     const restoreStdout = json ? silenceStdout() : undefined;
 
     let {
@@ -229,10 +228,8 @@ export class PublishBundleCommand extends BaseCommand {
     });
 
     const client = new ApiClient(getApiBaseUrl(region));
-    // One spinner covers the whole publish: upload + waiting for the bundle to
-    // register. Registration is async (S3 event → update-uploaded-data), so we
-    // poll until it's queryable, otherwise a following release-bundle can race
-    // ahead into "bundle not found". Best-effort — it never fails the publish.
+    // Registration is async server-side: poll until the bundle is queryable so
+    // a following release-bundle can't race into "bundle not found".
     let registered = true;
     const { hash, version, bucketCreated, bucketName } = await progress(
       chalk.white("Publishing bundle"),
@@ -288,10 +285,8 @@ export class PublishBundleCommand extends BaseCommand {
 
   /**
    * Poll the by-hash endpoint until the just-uploaded bundle is registered.
-   * Best-effort: returns true once confirmed, false if it doesn't register
-   * within the window. Never throws — a slow (or older) backend must not fail a
-   * publish whose upload already succeeded. Uses the CI-token route when a
-   * ci-token was supplied, otherwise the user route (client carries the token).
+   * Best-effort and never throws — a slow backend must not fail a publish
+   * whose upload already succeeded.
    */
   private async waitForBundle(
     client: ApiClient,

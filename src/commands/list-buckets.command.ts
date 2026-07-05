@@ -57,8 +57,6 @@ export class ListBucketsCommand extends BaseCommand {
       { indent: ui.INDENT, spaced: true }
     );
 
-    // The server returns at most `limit`; if we got exactly that many there
-    // may be more (narrow with --name, raise --limit, or use the console).
     ui.blank();
     if (buckets.length >= limit) {
       ui.hint(

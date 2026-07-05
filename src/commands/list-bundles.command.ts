@@ -36,8 +36,6 @@ const bundleColumns: BoardColumn[] = [
     render: (b) => renderValue(b.author?.fullName ?? b.author?.email),
   },
   { header: "ReleaseNote", render: (b) => renderValue(b.releaseNote) },
-  // Full hash (release-bundle consumes it). minWidth 32 → on narrow terminals
-  // the 64-char value wraps into two clean halves instead of being crushed.
   {
     header: "Hash",
     render: (b) => renderValue(b.sha256Checksum),
@@ -75,8 +73,6 @@ export class ListBundlesCommand extends BaseCommand {
 
     printBoard(bundles, bundleColumns, { indent: ui.INDENT, spaced: true });
 
-    // The server returns at most `limit`; if we got exactly that many there
-    // may be more (narrow with --platform, raise --limit, or use the console).
     ui.blank();
     if (bundles.length >= limit) {
       ui.hint(
@@ -98,8 +94,6 @@ export class ListBundlesCommand extends BaseCommand {
         );
       }
       const client = createCiApiClient(options.ciToken);
-      // Send name or id straight through — the API resolves the name against
-      // the project and authorizes it.
       const res = await progress("Fetching bundles", () =>
         client.post<{ data: BundleSummary[] }>(ENDPOINTS.BUNDLE.CI_LIST, {
           projectId: options.projectId,
@@ -114,8 +108,6 @@ export class ListBundlesCommand extends BaseCommand {
 
     const { orgId, region } = await resolveOrgContext(options.orgId);
     const projectId = await resolveProjectId(orgId, region, options.projectId);
-    // Explicit --bucket / --bucket-id go straight to the server (it resolves +
-    // authorizes the name); only prompt with the picker when neither is given.
     let bucketId = options.bucketId as string | undefined;
     const bucketName = options.bucket as string | undefined;
     if (!bucketId && !bucketName) {

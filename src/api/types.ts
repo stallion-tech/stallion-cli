@@ -1,10 +1,6 @@
 /**
- * Lean payload shapes returned by the CLI-owned /cli read routes.
- *
- * Fields a deployment may omit (older servers, per-route variants) are
- * optional, and `_id` is modeled alongside `id` where routes differ — callers
- * normalize with `id ?? _id`. These types describe the read contract only;
- * command flags/options are typed at the command layer.
+ * Payload shapes returned by the CLI-owned /cli read routes. Optional fields
+ * may be omitted by older deployments; some routes send `_id` instead of `id`.
  */
 
 export interface UserProfile {

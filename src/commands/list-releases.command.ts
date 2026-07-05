@@ -35,8 +35,6 @@ const expectedOptions: CommandOption[] = [
 @ValidateUser()
 export class ListReleasesCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
-    // An app version only identifies releases together with a platform —
-    // half-specifying is almost certainly a mistake, so fail fast.
     if (options.appVersion && !options.platform) {
       throw new Error("--platform is required when --app-version is provided");
     }

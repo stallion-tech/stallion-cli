@@ -18,8 +18,7 @@ export const ENDPOINTS = {
     LIST: "/cli/list-orgs", // user token only (org scope needs a user)
   },
   PROJECT: {
-    // User token only. Projects are hosted per region — call this on the
-    // org's regional API, not the global one.
+    // User token only; call on the org's regional API (projects are per-region).
     LIST: "/cli/list-projects",
   },
   BUCKET: {
@@ -34,7 +33,6 @@ export const ENDPOINTS = {
     CI_BY_HASH: "/cli/ci/bundle-by-hash",
   },
   PATCH: {
-    // Patches generated toward a release bundle (delta updates).
     INFO: "/cli/patch-info",
     CI_INFO: "/cli/ci/patch-info",
   },

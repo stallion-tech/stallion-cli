@@ -1,6 +1,6 @@
 import { CONFIG } from "@/api/config";
 
-/** Platforms a Stallion bundle can target — the single source of truth. */
+/** Platforms a Stallion bundle can target. */
 export const PLATFORMS = ["android", "ios"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 

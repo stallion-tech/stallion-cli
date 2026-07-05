@@ -1,33 +1,21 @@
 import { ui } from "@/ui";
 
-/**
- * Listing commands cap output to the most-recent N rows so a project with
- * hundreds of buckets/bundles/releases doesn't dump a wall of text. The full
- * set lives in the web console (a link is shown when the list is capped).
- */
+/** Default number of rows shown by listing commands. */
 export const LIST_LIMIT = 15;
 
 /** Server-enforced ceiling for --limit. */
 export const MAX_LIST_LIMIT = 30;
 
-/** Web console — where the full, unbounded lists live. */
 export const CONSOLE_URL = "https://console.stalliontech.io";
 
-/**
- * Resolve a --limit flag value: default LIST_LIMIT, clamped to MAX_LIST_LIMIT
- * (the server enforces the same ceiling; clamping here avoids a 400 round-trip).
- */
+/** Resolve a --limit flag value: default LIST_LIMIT, clamped to MAX_LIST_LIMIT. */
 export function resolveLimit(value: unknown): number {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return LIST_LIMIT;
   return Math.min(Math.floor(n), MAX_LIST_LIMIT);
 }
 
-/**
- * Shared footer for listing commands: a count line, plus (when the list was
- * capped) a pointer to the console for the full set. Diagnostics only, so it
- * rides on stderr like other hints and never touches stdout data.
- */
+/** Shared listing footer: count line, plus a console link when capped. */
 export function printListFooter(
   nounSingular: string,
   shown: number,
@@ -44,11 +32,7 @@ export function printListFooter(
   }
 }
 
-/**
- * Sort `items` newest-first (by the given date accessor, when provided) and
- * return the most-recent `LIST_LIMIT`, plus the untrimmed total so callers can
- * show "Showing 15 of N".
- */
+/** Sort newest-first and return the most-recent LIST_LIMIT plus the total. */
 export function capRecent<T>(
   items: T[],
   getDate?: (item: T) => string | number | Date | null | undefined

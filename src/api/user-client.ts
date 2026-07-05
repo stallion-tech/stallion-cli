@@ -137,9 +137,6 @@ export async function resolveProjectId(
 ): Promise<string> {
   const useSaved = opts.useSaved !== false;
 
-  // Explicit --project-id is passed through as-is: the API authorizes every
-  // request, so pre-checking here would only add a round-trip. An id the user
-  // can't access fails at the first API call.
   if (projectId) {
     return String(projectId);
   }

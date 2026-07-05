@@ -1,9 +1,6 @@
 /**
- * Redirect stdout to stderr until the returned restore fn is called.
- *
- * Used by `--json` command modes so stdout carries ONLY the final JSON result
- * (safe for `$(... | jq)` capture in CI) while all diagnostics — logs, spinners,
- * and child-process stdout (e.g. the RN bundler) — still stream to stderr.
+ * Redirect stdout to stderr until the returned restore fn is called — --json
+ * mode uses this so stdout carries only the final JSON result.
  */
 let activeRestore: (() => void) | null = null;
 
@@ -19,12 +16,7 @@ export function silenceStdout(): () => void {
   return restore;
 }
 
-/**
- * Restore stdout if it is currently silenced (idempotent). The top-level error
- * handler calls this before emitting the `--json` error object, so a failure
- * mid-command (which never reaches the command's own restore) still surfaces
- * `{"error":...}` on real stdout for `jq`/CI consumers.
- */
+/** Restore stdout if it is currently silenced (idempotent). */
 export function restoreStdout(): void {
   activeRestore?.();
 }

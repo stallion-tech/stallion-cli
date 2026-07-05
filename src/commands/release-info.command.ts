@@ -39,8 +39,6 @@ const expectedOptions: CommandOption[] = [
 @ValidateUser()
 export class ReleaseInfoCommand extends BaseCommand {
   async execute(options: Record<string, any>): Promise<void> {
-    // Flag dependency ladder: a release is identified by
-    // (platform, appVersion, promotedId) — partial combos are ambiguous.
     if (options.appVersion && !options.platform) {
       throw new Error("--platform is required when --app-version is provided");
     }
@@ -54,13 +52,11 @@ export class ReleaseInfoCommand extends BaseCommand {
     const detail = await this.fetchDetail(options);
     if (!detail) return;
 
-    // In JSON mode emit the raw detail once and skip the formatted sections.
     if (json) {
       console.log(JSON.stringify(detail, null, 2));
       return;
     }
 
-    // Console — pipeline stages anchored by an inline rollout meter (3f).
     const events = detail.eventCount ?? {};
     const hashShort = detail.publishedBundle?.sha256Checksum
       ? String(detail.publishedBundle.sha256Checksum).slice(0, 12)
@@ -105,7 +101,6 @@ export class ReleaseInfoCommand extends BaseCommand {
     else if (detail.isPaused) ui.status.warn("paused · rollout halted");
     else ui.status.ok("healthy · no rollback configured");
 
-    // Adoption Metrics — raw counts, shown last.
     ui.section("Adoption Metrics");
     printBoard(
       [detail],
