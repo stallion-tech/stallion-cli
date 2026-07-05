@@ -68,8 +68,8 @@ export class GenerateKeyPairCommand extends BaseCommand {
       ui.status.warn("Keep your private key secure — never share or commit it.");
       ui.status.fail("Stallion cannot recover or validate lost keys — treat them as production secrets.");
     } catch (error: any) {
-      ui.status.fail("Failed to generate keys");
-      if (error instanceof Error) ui.hint(`  ${error.message}`);
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate keys: ${reason}`);
     }
   }
 }
