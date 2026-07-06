@@ -96,3 +96,14 @@ export function createDefaultTokenStore(): TokenStore {
   const filePath = path.join(os.homedir(), ".stallion", "token-store.json");
   return new FileTokenStore(filePath);
 }
+
+/** Synchronous check for a stored CLI token (used by the welcome banner). */
+export function hasStoredToken(): boolean {
+  try {
+    const filePath = path.join(os.homedir(), ".stallion", "token-store.json");
+    const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    return Boolean(data?.cli?.token);
+  } catch {
+    return false;
+  }
+}

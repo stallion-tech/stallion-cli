@@ -1,9 +1,10 @@
 import { promptText } from "@/utils/prompt";
-import { logger } from "@/utils/logger";
+import { ui } from "@/ui";
 import { ENDPOINTS } from "@/api/endpoints";
 import opener from "opener";
 import os from "os";
 import { createDefaultTokenStore } from "@/utils/token-store";
+import { clearContext, setContext } from "@/utils/context-store";
 import { ApiClient } from "@/api/api-client";
 import { CONFIG } from "@/api/config";
 import { progress } from "@/utils/progress";
@@ -23,7 +24,7 @@ export abstract class BaseCommand {
       .map((opt) => `--${opt.name}`);
 
     if (missing.length) {
-      logger.error(`Missing required options: ${missing.join(", ")}`);
+      ui.status.fail(`Missing required options: ${missing.join(", ")}`);
       return false;
     }
 
@@ -49,7 +50,7 @@ export abstract class BaseCommand {
       );
 
       if (providedDisallowed.length) {
-        logger.error(
+        ui.status.fail(
           `When --custom-bundle-path is provided, these options are not allowed: ${providedDisallowed
             .map((n) => `--${n}`)
             .join(", ")}`
@@ -63,7 +64,7 @@ export abstract class BaseCommand {
 
   async login(): Promise<boolean> {
     try {
-      logger.info(
+      ui.status.info(
         `Opening your browser...${os.EOL}• Visit ${ENDPOINTS.CLI_LOGIN} and enter the code:`
       );
 
@@ -72,7 +73,7 @@ export abstract class BaseCommand {
       const token = await promptText("Enter your access token:");
 
       if (!token || token.trim().length < 5) {
-        logger.error("Invalid token entered.");
+        ui.status.fail("Invalid token entered.");
         return false;
       }
 
@@ -84,7 +85,7 @@ export abstract class BaseCommand {
       });
       await progress("Verifying login", () => this.verifyLogin());
 
-      logger.success("Token saved successfully. Login successful.");
+      ui.status.ok("Token saved successfully. Login successful.");
       return true;
     } catch (error) {
       throw new Error("Failed to login and store token");
@@ -100,7 +101,19 @@ export abstract class BaseCommand {
       }
       const apiClient = new ApiClient(CONFIG.API.BASE_URL);
       apiClient.setToken(tokenData.accessToken.token);
-      await apiClient.get(ENDPOINTS.USER.VERIFY);
+      const res = await apiClient.get<{ data: any }>(ENDPOINTS.USER.VERIFY);
+      // Cache the profile so the welcome banner can greet the user offline.
+      try {
+        const profile = res?.data;
+        if (profile) {
+          setContext({
+            userName: profile.fullName,
+            userEmail: profile.email,
+          });
+        }
+      } catch {
+        /* caching the name is best-effort; never fail auth for it */
+      }
       return true;
     } catch (error: any) {
       throw new Error("Failed to authenticate. Invalid token.");
@@ -111,7 +124,8 @@ export abstract class BaseCommand {
     try {
       const tokenStore = createDefaultTokenStore();
       await tokenStore.remove("cli");
-      logger.success("Logged out successfully");
+      clearContext();
+      ui.status.ok("Logged out successfully");
       return true;
     } catch (error) {
       throw new Error("Failed to logout");

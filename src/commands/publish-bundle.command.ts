@@ -1,7 +1,7 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { ValidateUser } from "@decorators/validate-user.decorator";
-import { logger } from "@utils/logger";
+import { ui } from "@/ui";
 import path from "path";
 import fs from "fs/promises";
 import {
@@ -19,8 +19,9 @@ import { ENDPOINTS } from "@/api/endpoints";
 import { createDefaultTokenStore } from "@/utils/token-store";
 import { createZip } from "@/utils/archive";
 import { keepArtifacts as saveArtifacts } from "@/utils/copy";
-import { getApiBaseUrl } from "@/utils/common";
+import { getApiBaseUrl, PLATFORMS } from "@/utils/common";
 import { resolveRegion } from "@/utils/region";
+import { silenceStdout } from "@/utils/stdout";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -82,7 +83,13 @@ const expectedOptions: CommandOption[] = [
     name: "custom-bundle-path",
     description: "The path to the custom bundle to upload",
     required: false,
-  }
+  },
+  {
+    name: "json",
+    description:
+      "Print only a JSON result ({version, hash, platform, uploadPath}) on stdout for scripting",
+    required: false,
+  },
 ];
 
 @Command({
@@ -101,7 +108,7 @@ export class PublishBundleCommand extends BaseCommand {
   }
 
   async execute(options: Record<string, any>): Promise<void> {
-    logger.info("Starting publish-bundle command");
+    const json = Boolean(options.json);
 
     if (!this.validateOptions(options, expectedOptions)) {
       return;
@@ -110,6 +117,10 @@ export class PublishBundleCommand extends BaseCommand {
     if (!getReactNativeVersion()) {
       throw new Error("No react native project found in current directory");
     }
+
+    // --json: stdout carries only the final JSON result; everything else
+    // (logs, spinners, the RN bundler's stdout) goes to stderr.
+    const restoreStdout = json ? silenceStdout() : undefined;
 
     let {
       uploadPath,
@@ -133,7 +144,9 @@ export class PublishBundleCommand extends BaseCommand {
     await fs.mkdir(this.contentRootPath);
 
     if (!isValidPlatform(platform)) {
-      throw new Error(`Platform must be "android" or "ios".`);
+      throw new Error(
+        `Platform must be ${PLATFORMS.map((p) => `"${p}"`).join(" or ")}.`
+      );
     }
 
     // Run RN Command and Hermes Command only when expoBundlePath is not provided
@@ -202,7 +215,7 @@ export class PublishBundleCommand extends BaseCommand {
     );
     const zipPath = path.resolve(contentTempRootPath, "build.zip");
     const stats = await fs.stat(zipPath);
-    logger.info(`Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+    ui.hint(`  Bundle size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
     const tokenStore = createDefaultTokenStore();
     const tokenData = await tokenStore.get("cli");
@@ -215,21 +228,96 @@ export class PublishBundleCommand extends BaseCommand {
     });
 
     const client = new ApiClient(getApiBaseUrl(region));
-    const hash = await progress(
+    // Registration is async server-side: poll until the bundle is queryable so
+    // a following release-bundle can't race into "bundle not found".
+    let registered = true;
+    const { hash, version, bucketCreated, bucketName } = await progress(
       chalk.white("Publishing bundle"),
-      (updateProgress) =>
-        this.uploadBundle(
+      async (updateProgress) => {
+        const result = await this.uploadBundle(
           client,
           zipPath,
           uploadPath,
           platform,
           releaseNote,
           ciToken,
-          updateProgress
-        ),
+          (p) => updateProgress(p * 0.95)
+        );
+        if (result.projectId) {
+          registered = await this.waitForBundle(
+            client,
+            {
+              ciToken,
+              projectId: result.projectId,
+              hash: result.hash,
+            },
+            (elapsedFraction) => updateProgress(95 + elapsedFraction * 4)
+          );
+        }
+        updateProgress(100);
+        return result;
+      }
     );
-    logger.success("Success!, Published new version");
-    logger.info(`Published bundle hash: ${hash}`);
+
+    if (!registered) {
+      ui.status.warn(
+        "Bundle is still registering — if release-bundle can't find it yet, retry in a moment."
+      );
+    }
+
+    if (json) {
+      restoreStdout?.();
+      console.log(
+        JSON.stringify({ version, hash, platform, uploadPath, bucketCreated })
+      );
+    } else {
+      if (bucketCreated) {
+        ui.status.ok(`Created new bucket "${bucketName}"`);
+      }
+      ui.status.ok(`Published version ${version}`);
+      ui.keyValue([
+        ["Published bundle hash", hash],
+        ["Platform", platform],
+        ["Upload Path", uploadPath],
+      ]);
+    }
+  }
+
+  /**
+   * Poll the by-hash endpoint until the just-uploaded bundle is registered.
+   * Best-effort and never throws — a slow backend must not fail a publish
+   * whose upload already succeeded.
+   */
+  private async waitForBundle(
+    client: ApiClient,
+    opts: { ciToken?: string; projectId: string; hash: string },
+    onTick?: (elapsedFraction: number) => void
+  ): Promise<boolean> {
+    const { ciToken, projectId, hash } = opts;
+    const endpoint = ciToken
+      ? ENDPOINTS.BUNDLE.CI_BY_HASH
+      : ENDPOINTS.BUNDLE.BY_HASH;
+    const config = ciToken ? { headers: { "x-ci-token": ciToken } } : undefined;
+    const intervalMs = 2000;
+    const windowMs = 60_000;
+    const start = Date.now();
+    const deadline = start + windowMs;
+
+    while (Date.now() < deadline) {
+      onTick?.(Math.min(1, (Date.now() - start) / windowMs));
+      try {
+        const res = await client.post<{ data: { exists: boolean } }>(
+          endpoint,
+          { projectId, checksum: hash },
+          config
+        );
+        if (res?.data?.exists) return true;
+      } catch {
+        // Endpoint missing (older backend) or transient — keep trying to the deadline.
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    return false;
   }
 
   private async uploadBundle(
@@ -273,9 +361,23 @@ export class PublishBundleCommand extends BaseCommand {
       if (!url) {
         throw new Error("Internal Error: invalid signed url");
       }
+      // The server returns the version it assigned to this upload + the
+      // project it belongs to (used to poll for registration afterwards).
+      const rawVersion = signedUrlResp?.meta?.version;
+      const version =
+        rawVersion != null && !isNaN(Number(rawVersion))
+          ? Number(rawVersion)
+          : null;
+      const projectId = signedUrlResp?.meta?.projectId
+        ? String(signedUrlResp.meta.projectId)
+        : null;
+      // The server creates the bucket on the fly when `uploadPath` is new; it
+      // signals that via meta.bucketCreated so we can tell the user.
+      const bucketCreated = Boolean(signedUrlResp?.meta?.bucketCreated);
+      const bucketName = signedUrlResp?.meta?.bucketName ?? uploadPath;
 
       await client.putWithProgress(url, filePath, "application/zip", onProgress);
-      return hash;
+      return { hash, version, projectId, bucketCreated, bucketName };
     } catch (e: any) {
       if (e.toString().includes("SignatureDoesNotMatch")) {
         throw "Error uploading bundle. Signature does not match.";

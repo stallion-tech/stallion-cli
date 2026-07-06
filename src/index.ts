@@ -8,10 +8,12 @@ import {
   getCommandMetadata,
   registeredCommands,
 } from "@decorators/command.decorator";
-import { showBanner } from "@utils/banner";
-import { logger } from "@utils/logger";
+import { showBanner, showWelcome } from "@/ui";
+import { ui } from "@/ui";
 import { getVersion } from "@utils/version";
 import { normalizeOptions } from "@utils/normalize";
+import { restoreStdout } from "@utils/stdout";
+import { mapServerError } from "@utils/errors";
 import { rimraf } from "rimraf";
 import fs from "fs";
 
@@ -32,7 +34,7 @@ getCommands().forEach((options, name) => {
   });
 
   if (!commandClass) {
-    logger.error(`No class found for command "${name}"`);
+    ui.status.fail(`No class found for command "${name}"`);
     return;
   }
 
@@ -52,25 +54,37 @@ getCommands().forEach((options, name) => {
   });
 
   command.action(async (...args) => {
+    const opts = normalizeOptions(args.slice(0, args.length - 1));
     try {
-      await showBanner();
+      if (!opts.json) showBanner();
 
-      await registry.executeCommand(
-        name,
-        normalizeOptions(args.slice(0, args.length - 1))
-      );
+      await registry.executeCommand(name, opts);
     } catch (error) {
-      logger.error(error instanceof Error ? error.message : "Unknown error");
+      // Undo any --json stdout silencing so the error object reaches real stdout.
+      restoreStdout();
+      const message = mapServerError(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      if (opts.json) {
+        process.stdout.write(JSON.stringify({ error: message }) + "\n");
+      }
+      ui.status.fail(message);
       process.exit(1);
     }
   });
 });
 
 program.on("command:*", (operands) => {
-  logger.error(`Command "${operands[0]}" not found`);
-  logger.info(`Run "stallion help" to see all available commands`);
-  process.exit(0);
+  ui.status.fail(`Command "${operands[0]}" not found`);
+  ui.hint(`Run "stallion help" to see all available commands`);
+  process.exit(1);
 });
+
+// Bare `stallion` (no subcommand) shows the hero welcome screen.
+if (process.argv.slice(2).length === 0) {
+  showWelcome();
+  process.exit(0);
+}
 
 program.parse();
 
