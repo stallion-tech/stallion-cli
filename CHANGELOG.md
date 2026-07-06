@@ -1,3 +1,10 @@
+# [2.6.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.1...v2.6.0-alpha.2) (2026-07-06)
+
+
+### Features
+
+* **cli:** read commands, CI automation surface, and branded terminal UI ([#46](https://github.com/stallion-tech/stallion-cli/issues/46)) ([59ac814](https://github.com/stallion-tech/stallion-cli/commit/59ac814fba69ca39907b51ebb9e8d6b9a117706d))
+
 # [2.6.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.5.0...v2.6.0-alpha.1) (2026-07-06)
 
 
