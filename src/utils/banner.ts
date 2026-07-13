@@ -1,11 +1,11 @@
-import { logger } from "@utils/logger";
 import gradient from "gradient-string";
 import chalk from "chalk";
-const figlet = require("figlet");
 
 import { getVersion } from "./version";
 
-export const showBanner = async (): Promise<void> => {
+const renderFigletBanner = (): Promise<string> => {
+  const figlet = require("figlet");
+
   return new Promise((resolve, reject) => {
     figlet.text(
       "STALLION",
@@ -15,23 +15,32 @@ export const showBanner = async (): Promise<void> => {
         verticalLayout: "default",
       },
       (err: any, data: any) => {
-        if (err) {
-          reject("Something went wrong...");
+        if (err || !data) {
+          reject(err ?? new Error("figlet returned no output"));
           return;
         }
-        // Apply retro gradient to the banner
-        const gradientBanner = gradient.retro.multiline(data || "");
-        console.log(gradientBanner);
-        console.log(
-          "\n" +
-            chalk.whiteBright(
-              `⚡ Welcome to the Stallion CLI ${chalk.bold(
-                chalk.greenBright(`v${getVersion()}`)
-              )} ⚡ \n`
-            )
-        );
-        resolve();
+        resolve(data);
       }
     );
   });
+};
+
+export const showBanner = async (): Promise<void> => {
+  let banner = "STALLION";
+
+  try {
+    banner = await renderFigletBanner();
+  } catch {
+    // Decorative only — fall back to the plain wordmark.
+  }
+
+  console.log(gradient.retro.multiline(banner));
+  console.log(
+    "\n" +
+      chalk.whiteBright(
+        `⚡ Welcome to the Stallion CLI ${chalk.bold(
+          chalk.greenBright(`v${getVersion()}`)
+        )} ⚡ \n`
+      )
+  );
 };
