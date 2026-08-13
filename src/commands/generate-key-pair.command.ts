@@ -60,7 +60,6 @@ export class GenerateKeyPairCommand extends BaseCommand {
       ui.text("Do NOT regenerate keys unless absolutely necessary; it may break compatibility with existing Stallion releases.");
 
       ui.section("If keys are lost");
-      ui.text("Publish your next Stallion release without bundle signing.");
       ui.text("Regenerate and include the new keys in your next Play Store release.");
       ui.text("Once that Play Store update is live, resume signed Stallion releases as normal.");
 
