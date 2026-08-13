@@ -1,3 +1,10 @@
+# [2.6.0-alpha.3](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.2...v2.6.0-alpha.3) (2026-08-13)
+
+
+### Bug Fixes
+
+* **cli:** drop unsigned-release step from key loss guidance ([#49](https://github.com/stallion-tech/stallion-cli/issues/49)) ([01e9a09](https://github.com/stallion-tech/stallion-cli/commit/01e9a0999015668492bb0c5c311f855fbfa71bf5))
+
 # [2.6.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.1...v2.6.0-alpha.2) (2026-07-06)
 
 
