@@ -25,14 +25,14 @@
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
     "archiver": "^7.0.1",
-    "axios": "^1.9.0",
+    "axios": "^1.20.0",
     "chalk": "^4.1.2",
     "commander": "^13.1.0",
     "figlet": "1.8.1",
     "gradient-string": "^2.0.2",
     "inquirer": "^12.6.1",
-    "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21",
+    "jsonwebtoken": "^9.0.3",
+    "lodash": "^4.18.1",
     "mime": "^3.0.0",
     "opener": "^1.5.2",
     "ora": "^5.4.1",
@@ -48,8 +48,8 @@
     "@types/figlet": "^1.5.8",
     "@types/gradient-string": "^1.1.6",
     "@types/inquirer": "^9.0.8",
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/lodash": "^4.17.16",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/lodash": "^4.17.25",
     "@types/node": "^22.15.17",
     "@types/opener": "^1.4.3",
     "@types/semver": "^7.7.0",
@@ -59,8 +59,25 @@
     "ts-node-dev": "^2.0.0",
     "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
-    "semantic-release": "19.0.3",
+    "semantic-release": "24.2.9",
     "typescript": "^5.8.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch@3": "^3.1.4",
+      "minimatch@5": "^5.1.8",
+      "minimatch@9": "^9.0.7",
+      "minimatch@10": "^10.2.3",
+      "glob@10": "^10.5.0",
+      "glob@11": "^11.1.0",
+      "brace-expansion@1": "^1.1.18",
+      "brace-expansion@2": "^2.1.4",
+      "form-data@4": "^4.0.6",
+      "follow-redirects": "^1.16.0",
+      "handlebars": "^4.7.9",
+      "picomatch@2": "^2.3.2",
+      "diff@4": "^4.0.4"
+    }
   },
   "release": {
     "branches": [
