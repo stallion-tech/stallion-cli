@@ -1,3 +1,10 @@
+# [2.6.0-alpha.4](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.3...v2.6.0-alpha.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **deps:** upgrade vulnerable dependencies to patched versions ([#52](https://github.com/stallion-tech/stallion-cli/issues/52)) ([6986d3e](https://github.com/stallion-tech/stallion-cli/commit/6986d3ee77ba7deb217cfca68aa67fae2f287d65))
+
 # [2.6.0-alpha.3](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.2...v2.6.0-alpha.3) (2026-08-13)
 
 
