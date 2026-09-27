@@ -37,6 +37,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: "24.x"
+          # v5 auto-caches based on package.json's packageManager field, which
+          # runs before corepack installs pnpm below. The pnpm store is cached
+          # explicitly in the next step anyway.
+          package-manager-cache: false
 
       - name: Enable Corepack and install pnpm
         run: |
