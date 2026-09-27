@@ -1,3 +1,10 @@
+# [2.6.0-alpha.5](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.4...v2.6.0-alpha.5) (2026-09-27)
+
+
+### Bug Fixes
+
+* pin figlet to 1.8.1 and harden banner against load failures ([#48](https://github.com/stallion-tech/stallion-cli/issues/48)) ([d393005](https://github.com/stallion-tech/stallion-cli/commit/d3930055a93091eaa8a07060df040a982237ea58))
+
 # [2.6.0-alpha.4](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.3...v2.6.0-alpha.4) (2026-09-17)
 
 
