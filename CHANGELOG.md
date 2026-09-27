@@ -12,6 +12,13 @@
 
 * **cli:** drop unsigned-release step from key loss guidance ([#49](https://github.com/stallion-tech/stallion-cli/issues/49)) ([01e9a09](https://github.com/stallion-tech/stallion-cli/commit/01e9a0999015668492bb0c5c311f855fbfa71bf5))
 
+## [2.5.1](https://github.com/stallion-tech/stallion-cli/compare/v2.5.0...v2.5.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* pin figlet to 1.8.1 and harden banner against load failures ([#48](https://github.com/stallion-tech/stallion-cli/issues/48)) ([d393005](https://github.com/stallion-tech/stallion-cli/commit/d3930055a93091eaa8a07060df040a982237ea58))
+
 # [2.6.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.1...v2.6.0-alpha.2) (2026-07-06)
 
 

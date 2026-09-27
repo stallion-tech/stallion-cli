@@ -8,13 +8,20 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # Must match the Environment on npm's trusted publisher for this package
+    environment: prod
     # Prevent the app's own release commit from re-triggering this workflow
     if: github.actor != 'stallion-release-bot[bot]'
-    permissions: write-all
+    # id-token: write mints the OIDC token npm's trusted publisher verifies
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     steps:
       - name: Generate app token
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
@@ -27,9 +34,9 @@ jobs:
           persist-credentials: true
 
       - name: Setup Node.js and enable Corepack
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20.x"
+          node-version: "24.x"
 
       - name: Enable Corepack and install pnpm
         run: |
@@ -52,11 +59,13 @@ jobs:
       - name: Build and prepare release
         run: pnpm install --frozen-lockfile && pnpm prepare-release
 
+      # Publishes to npm via trusted publishing, so no NPM_TOKEN is needed.
+      # npm binds the trusted publisher to this workflow's file name: renaming
+      # publish-pkg.yml means updating the publisher on npmjs.com too.
       - name: Release package
         run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GIT_AUTHOR_EMAIL: ${{ secrets.GH_DEPLOY_EMAIL }}
           GIT_AUTHOR_NAME: ${{ secrets.GH_DEPLOY_NAME }}
           GIT_COMMITTER_EMAIL: ${{ secrets.GH_DEPLOY_EMAIL }}
