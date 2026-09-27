@@ -1,6 +1,7 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, getCommands } from "@decorators/command.decorator";
-import { logger } from "@utils/logger";
+import { printTable } from "@/ui";
+import { ui } from "@/ui";
 
 @Command({
   name: "help",
@@ -9,13 +10,24 @@ import { logger } from "@utils/logger";
 })
 export class HelpCommand extends BaseCommand {
   async execute(): Promise<void> {
-    const commands = getCommands();
+    const commands = [...getCommands().entries()].map(([name, options]) => ({
+      name,
+      alias: options.alias ?? "-",
+      description: options.description,
+    }));
 
-    logger.title("\nAvailable Commands");
-    logger.subtitle("==================\n");
+    ui.section("Commands");
+    printTable(
+      commands,
+      [
+        { header: "COMMAND", value: (c) => c.name },
+        { header: "ALIAS", value: (c) => c.alias },
+        { header: "DESCRIPTION", value: (c) => c.description },
+      ],
+      { indent: ui.INDENT }
+    );
 
-    commands.forEach((options, name) => {
-      logger.command(name, options.description, options.alias);
-    });
+    ui.blank();
+    ui.hint('  Run "stallion <command> --help" for command-specific options.');
   }
 }

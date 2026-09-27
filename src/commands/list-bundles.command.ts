@@ -1,0 +1,128 @@
+import { BaseCommand } from "@command-line/base.command";
+import { Command, CommandOption } from "@decorators/command.decorator";
+import { ValidateUser } from "@decorators/validate-user.decorator";
+import { progress } from "@/utils/progress";
+import { ui } from "@/ui";
+import { ENDPOINTS } from "@/api/endpoints";
+import {
+  createCiApiClient,
+  createUserApiClient,
+  resolveBucketId,
+  resolveOrgContext,
+  resolveProjectId,
+} from "@/api/user-client";
+import { BoardColumn, printBoard, renderValue } from "@/ui";
+import { CONSOLE_URL, MAX_LIST_LIMIT, resolveLimit } from "@/utils/list";
+import { BundleSummary } from "@/api/types";
+
+const expectedOptions: CommandOption[] = [
+  { name: "org-id", description: "Organization id (prompts if omitted)", required: false },
+  { name: "project-id", description: "Project id (prompts if omitted; required with --ci-token)", required: false },
+  { name: "bucket", description: "Bucket name (prompts if omitted; --bucket or --bucket-id required with --ci-token)", required: false },
+  { name: "bucket-id", description: "Bucket id (alternative to --bucket)", required: false },
+  { name: "platform", description: "Filter by platform (android|ios)", required: false },
+  { name: "limit", description: "Max bundles to show (default 15, max 30)", required: false },
+  { name: "ci-token", description: "CI token (non-interactive; requires --project-id and --bucket/--bucket-id)", required: false },
+  { name: "json", description: "Output raw JSON", required: false },
+];
+
+const bundleColumns: BoardColumn[] = [
+  { header: "Version", render: (b) => renderValue(b.version) },
+  { header: "Platform", render: (b) => renderValue(b.platform) },
+  { header: "Promoted", render: (b) => renderValue(Boolean(b.isPromoted)) },
+  { header: "Created", render: (b) => renderValue(b.createdAt) },
+  {
+    header: "author",
+    render: (b) => renderValue(b.author?.fullName ?? b.author?.email),
+  },
+  { header: "ReleaseNote", render: (b) => renderValue(b.releaseNote) },
+  {
+    header: "Hash",
+    render: (b) => renderValue(b.sha256Checksum),
+    minWidth: 32,
+  },
+];
+
+@Command({
+  name: "list-bundles",
+  description: "List the staging bundles in a bucket (includes the hash for release)",
+  alias: "lbd",
+  options: expectedOptions,
+})
+@ValidateUser()
+export class ListBundlesCommand extends BaseCommand {
+  async execute(options: Record<string, any>): Promise<void> {
+    const json = Boolean(options.json);
+    const limit = resolveLimit(options.limit);
+    const bundles = await this.fetchBundles(options, limit);
+
+    if (json) {
+      console.log(JSON.stringify(bundles, null, 2));
+      return;
+    }
+
+    const label = options.platform
+      ? String(options.platform).toLowerCase()
+      : null;
+
+    ui.section(label ? `Bundles · ${label}` : "Bundles");
+    if (!bundles.length) {
+      ui.hint(label ? `  No ${label} bundles.` : "  No bundles.");
+      return;
+    }
+
+    printBoard(bundles, bundleColumns, { indent: ui.INDENT, spaced: true });
+
+    ui.blank();
+    if (bundles.length >= limit) {
+      ui.hint(
+        `  Showing the ${limit} most recent bundles. Narrow with --platform, raise with --limit (max ${MAX_LIST_LIMIT}), or see all → ${CONSOLE_URL}`
+      );
+    } else {
+      ui.hint(`  ${bundles.length} bundle${bundles.length === 1 ? "" : "s"}`);
+    }
+  }
+
+  private async fetchBundles(
+    options: Record<string, any>,
+    limit: number
+  ): Promise<BundleSummary[]> {
+    if (options.ciToken) {
+      if (!options.projectId || (!options.bucketId && !options.bucket)) {
+        throw new Error(
+          "--project-id and one of --bucket / --bucket-id are required with --ci-token"
+        );
+      }
+      const client = createCiApiClient(options.ciToken);
+      const res = await progress("Fetching bundles", () =>
+        client.post<{ data: BundleSummary[] }>(ENDPOINTS.BUNDLE.CI_LIST, {
+          projectId: options.projectId,
+          bucketId: options.bucketId,
+          bucketName: options.bucket,
+          platform: options.platform,
+          limit,
+        })
+      );
+      return res?.data ?? [];
+    }
+
+    const { orgId, region } = await resolveOrgContext(options.orgId);
+    const projectId = await resolveProjectId(orgId, region, options.projectId);
+    let bucketId = options.bucketId as string | undefined;
+    const bucketName = options.bucket as string | undefined;
+    if (!bucketId && !bucketName) {
+      bucketId = await resolveBucketId(region, projectId);
+    }
+    const client = await createUserApiClient(region);
+    const res = await progress("Fetching bundles", () =>
+      client.post<{ data: BundleSummary[] }>(ENDPOINTS.BUNDLE.LIST, {
+        projectId,
+        bucketId,
+        bucketName,
+        platform: options.platform,
+        limit,
+      })
+    );
+    return res?.data ?? [];
+  }
+}

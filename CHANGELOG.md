@@ -1,9 +1,43 @@
+# [2.6.0-alpha.4](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.3...v2.6.0-alpha.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **deps:** upgrade vulnerable dependencies to patched versions ([#52](https://github.com/stallion-tech/stallion-cli/issues/52)) ([6986d3e](https://github.com/stallion-tech/stallion-cli/commit/6986d3ee77ba7deb217cfca68aa67fae2f287d65))
+
+# [2.6.0-alpha.3](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.2...v2.6.0-alpha.3) (2026-08-13)
+
+
+### Bug Fixes
+
+* **cli:** drop unsigned-release step from key loss guidance ([#49](https://github.com/stallion-tech/stallion-cli/issues/49)) ([01e9a09](https://github.com/stallion-tech/stallion-cli/commit/01e9a0999015668492bb0c5c311f855fbfa71bf5))
+
 ## [2.5.1](https://github.com/stallion-tech/stallion-cli/compare/v2.5.0...v2.5.1) (2026-07-13)
 
 
 ### Bug Fixes
 
 * pin figlet to 1.8.1 and harden banner against load failures ([#48](https://github.com/stallion-tech/stallion-cli/issues/48)) ([d393005](https://github.com/stallion-tech/stallion-cli/commit/d3930055a93091eaa8a07060df040a982237ea58))
+
+# [2.6.0-alpha.2](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.1...v2.6.0-alpha.2) (2026-07-06)
+
+
+### Features
+
+* **cli:** read commands, CI automation surface, and branded terminal UI ([#46](https://github.com/stallion-tech/stallion-cli/issues/46)) ([59ac814](https://github.com/stallion-tech/stallion-cli/commit/59ac814fba69ca39907b51ebb9e8d6b9a117706d))
+
+# [2.6.0-alpha.1](https://github.com/stallion-tech/stallion-cli/compare/v2.5.0...v2.6.0-alpha.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* multi region support ([#41](https://github.com/stallion-tech/stallion-cli/issues/41)) ([22bc951](https://github.com/stallion-tech/stallion-cli/commit/22bc951527c60451e8056431f0f80e0054b035b8))
+
+
+### Features
+
+* refactor CLI and added support for bundle signing ([#27](https://github.com/stallion-tech/stallion-cli/issues/27)) ([f3ffcbd](https://github.com/stallion-tech/stallion-cli/commit/f3ffcbdb3800a9043250f625662c757667f4a8ea))
+* windows RN executable Fix ([#28](https://github.com/stallion-tech/stallion-cli/issues/28)) ([65f9760](https://github.com/stallion-tech/stallion-cli/commit/65f9760cebbf0c84fcbfeafac02997bbd671fee3))
 
 # [2.5.0](https://github.com/stallion-tech/stallion-cli/compare/v2.4.3...v2.5.0) (2026-06-07)
 
