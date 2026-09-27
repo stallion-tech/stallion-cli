@@ -1,3 +1,10 @@
+# [2.6.0-alpha.6](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.5...v2.6.0-alpha.6) (2026-09-27)
+
+
+### Bug Fixes
+
+* add repository field so provenance validation passes ([1dd1826](https://github.com/stallion-tech/stallion-cli/commit/1dd1826b37c514411e1c5d8617961ed3b4a282d2))
+
 # [2.6.0-alpha.5](https://github.com/stallion-tech/stallion-cli/compare/v2.6.0-alpha.4...v2.6.0-alpha.5) (2026-09-27)
 
 
