@@ -2,6 +2,10 @@
   "name": "stallion-cli",
   "version": "2.6.0",
   "description": "A powerful CLI tool for managing your Stallion deployments",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stallion-tech/stallion-cli.git"
+  },
   "main": "index.js",
   "bin": {
     "stallion": "index.js"
