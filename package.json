@@ -41,8 +41,8 @@
     "semver": "^7.7.2"
   },
   "devDependencies": {
-    "@semantic-release/changelog": "^6.0.0",
-    "@semantic-release/git": "^10.0.0",
+    "@semantic-release/changelog": "7.0.0",
+    "@semantic-release/git": "11.0.1",
     "@types/archiver": "^6.0.3",
     "@types/chalk": "^2.2.4",
     "@types/figlet": "^1.5.8",
@@ -59,7 +59,7 @@
     "ts-node-dev": "^2.0.0",
     "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
-    "semantic-release": "19.0.3",
+    "semantic-release": "25.0.9",
     "typescript": "^5.8.3"
   },
   "release": {
