@@ -1,13 +1,14 @@
 import { BaseCommand } from "@command-line/base.command";
 import { Command, CommandOption } from "@decorators/command.decorator";
 import { ValidateUser } from "@decorators/validate-user.decorator";
-import { logger } from "@utils/logger";
+import { ui } from "@/ui";
 import chalk from "chalk";
 import { progress } from "@/utils/progress";
 import { ApiClient } from "@/api/api-client";
 import { ENDPOINTS } from "@/api/endpoints";
 import { getApiBaseUrl } from "@/utils/common";
 import { parseTokenRegion } from "@/utils/region";
+import { silenceStdout } from "@/utils/stdout";
 
 const expectedOptions: CommandOption[] = [
   {
@@ -50,6 +51,12 @@ const expectedOptions: CommandOption[] = [
     description: "The CI token generated from the stallion dashboard",
     required: true,
   },
+  {
+    name: "json",
+    description:
+      "Print only a JSON result of the updated fields on stdout for scripting",
+    required: false,
+  },
 ];
 
 @Command({
@@ -65,7 +72,7 @@ export class UpdateReleaseCommand extends BaseCommand {
   }
 
   async execute(options: Record<string, any>): Promise<void> {
-    logger.info("Starting update-release command");
+    const json = Boolean(options.json);
     if (!this.validateOptions(options, expectedOptions)) {
       return;
     }
@@ -94,13 +101,33 @@ export class UpdateReleaseCommand extends BaseCommand {
     const region = parseTokenRegion(ciToken) ?? "ap";
     const client = new ApiClient(getApiBaseUrl(region));
 
+    // In JSON mode, keep stdout for the result only; diagnostics go to stderr.
+    const restoreStdout = json ? silenceStdout() : undefined;
+    const toBool = (v: unknown) =>
+      v === undefined ? undefined : v === true || v === "true";
+
     try {
       await progress(chalk.white("Updating release"), () =>
-        this.updateRelease(client, data, ciToken),
+        this.updateRelease(client, data, ciToken)
       );
-      logger.success("Release updated successfully!");
+
+      if (json) {
+        restoreStdout?.();
+        console.log(
+          JSON.stringify({
+            projectId,
+            hash,
+            rolloutPercent: data.rolloutPercent,
+            isMandatory: toBool(isMandatory),
+            isPaused: toBool(isPaused),
+            isRolledBack: toBool(isRolledBack),
+          })
+        );
+      } else {
+        ui.status.ok("Release updated successfully!");
+      }
     } catch (error) {
-      logger.error("Failed to update release");
+      ui.status.fail("Failed to update release");
       throw error;
     }
   }
